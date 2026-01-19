@@ -189,3 +189,9 @@ standalone.ts
 # My personal scripts directory
 .my-scripts/
 
+
+# Midscene.js dump files
+midscene_run/dump
+midscene_run/report
+midscene_run/tmp
+midscene_run/log

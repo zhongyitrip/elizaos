@@ -1,0 +1,25 @@
+{
+  "name": "@elizaos/plugin-zerion-enhanced",
+  "version": "0.1.0",
+  "description": "Enhanced Zerion plugin with detailed token information and chain filtering",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch"
+  },
+  "dependencies": {
+    "@elizaos/core": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.2"
+  },
+  "keywords": [
+    "eliza",
+    "plugin",
+    "zerion",
+    "crypto",
+    "wallet"
+  ]
+}

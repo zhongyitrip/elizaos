@@ -1,0 +1,1025 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ELIZAOS - Airdrop Architecture Demo</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        background: #0a0a0a;
+        color: #e5e5e5;
+        min-height: 100vh;
+      }
+      .container {
+        display: flex;
+        height: 100vh;
+      }
+      .sidebar {
+        width: 260px;
+        background: #111;
+        border-right: 1px solid #222;
+        padding: 20px;
+        overflow-y: auto;
+      }
+      .logo {
+        font-size: 20px;
+        font-weight: 700;
+        color: #fff;
+        margin-bottom: 8px;
+      }
+      .version {
+        font-size: 11px;
+        color: #666;
+        margin-bottom: 30px;
+      }
+      .nav-item {
+        padding: 12px 16px;
+        border-radius: 8px;
+        margin-bottom: 8px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 14px;
+        color: #999;
+        transition: all 0.2s;
+      }
+      .nav-item:hover {
+        background: #1a1a1a;
+        color: #fff;
+      }
+      .nav-item.active {
+        background: #667eea;
+        color: #fff;
+      }
+      .nav-icon {
+        font-size: 18px;
+      }
+
+      .main {
+        flex: 1;
+        overflow-y: auto;
+      }
+      .header {
+        padding: 24px 32px;
+        border-bottom: 1px solid #222;
+      }
+      .header h1 {
+        font-size: 24px;
+        margin-bottom: 8px;
+      }
+      .header p {
+        font-size: 14px;
+        color: #999;
+      }
+
+      .content {
+        padding: 32px;
+      }
+
+      .architecture-diagram {
+        background: #111;
+        border: 1px solid #222;
+        border-radius: 12px;
+        padding: 32px;
+        margin-bottom: 32px;
+      }
+
+      .layer {
+        margin-bottom: 24px;
+        padding: 20px;
+        background: #1a1a1a;
+        border-radius: 8px;
+        border-left: 4px solid #667eea;
+      }
+
+      .layer-title {
+        font-size: 16px;
+        font-weight: 600;
+        margin-bottom: 12px;
+        color: #667eea;
+      }
+
+      .layer-desc {
+        font-size: 13px;
+        color: #999;
+        line-height: 1.6;
+        margin-bottom: 16px;
+      }
+
+      .items-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 12px;
+      }
+
+      .item-card {
+        background: #0a0a0a;
+        border: 1px solid #333;
+        border-radius: 6px;
+        padding: 12px;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      .item-card:hover {
+        border-color: #667eea;
+        transform: translateY(-2px);
+      }
+
+      .item-card.selected {
+        border-color: #667eea;
+        background: #667eea22;
+      }
+
+      .item-name {
+        font-size: 14px;
+        font-weight: 600;
+        margin-bottom: 4px;
+      }
+
+      .item-desc {
+        font-size: 12px;
+        color: #666;
+      }
+
+      .flow-container {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin: 32px 0;
+      }
+
+      .flow-step {
+        flex: 1;
+        background: #111;
+        border: 2px solid #333;
+        border-radius: 12px;
+        padding: 24px;
+        text-align: center;
+        position: relative;
+      }
+
+      .flow-step.active {
+        border-color: #667eea;
+        background: #667eea11;
+      }
+
+      .flow-arrow {
+        font-size: 24px;
+        color: #666;
+      }
+
+      .step-number {
+        display: inline-block;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: #667eea;
+        color: #fff;
+        line-height: 32px;
+        font-weight: 600;
+        margin-bottom: 12px;
+      }
+
+      .step-title {
+        font-size: 16px;
+        font-weight: 600;
+        margin-bottom: 8px;
+      }
+
+      .step-desc {
+        font-size: 13px;
+        color: #999;
+      }
+
+      .btn {
+        padding: 12px 24px;
+        border-radius: 8px;
+        border: none;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      .btn-primary {
+        background: #667eea;
+        color: #fff;
+      }
+
+      .btn-primary:hover {
+        background: #5568d3;
+      }
+
+      .btn-secondary {
+        background: #1a1a1a;
+        color: #fff;
+        border: 1px solid #333;
+      }
+
+      .btn-secondary:hover {
+        background: #222;
+      }
+
+      .execution-log {
+        background: #0a0a0a;
+        border: 1px solid #222;
+        border-radius: 8px;
+        padding: 16px;
+        font-family: 'Monaco', 'Courier New', monospace;
+        font-size: 12px;
+        max-height: 400px;
+        overflow-y: auto;
+        margin-top: 24px;
+      }
+
+      .log-line {
+        padding: 4px 0;
+        color: #999;
+      }
+
+      .log-line.success {
+        color: #10b981;
+      }
+      .log-line.error {
+        color: #ef4444;
+      }
+      .log-line.info {
+        color: #3b82f6;
+      }
+
+      .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.8);
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+      }
+
+      .modal.show {
+        display: flex;
+      }
+
+      .modal-content {
+        background: #111;
+        border: 1px solid #222;
+        border-radius: 12px;
+        padding: 32px;
+        max-width: 600px;
+        width: 90%;
+        max-height: 80vh;
+        overflow-y: auto;
+      }
+
+      .modal-title {
+        font-size: 20px;
+        font-weight: 600;
+        margin-bottom: 16px;
+      }
+
+      .modal-close {
+        float: right;
+        font-size: 24px;
+        cursor: pointer;
+        color: #666;
+      }
+
+      .modal-close:hover {
+        color: #fff;
+      }
+
+      .plugin-comparison {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        margin-top: 16px;
+      }
+
+      .comparison-card {
+        background: #1a1a1a;
+        border: 1px solid #333;
+        border-radius: 8px;
+        padding: 16px;
+      }
+
+      .comparison-title {
+        font-size: 14px;
+        font-weight: 600;
+        margin-bottom: 12px;
+      }
+
+      .comparison-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 0;
+        border-bottom: 1px solid #222;
+        font-size: 13px;
+      }
+
+      .comparison-item:last-child {
+        border-bottom: none;
+      }
+
+      .badge {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: 600;
+      }
+
+      .badge-success {
+        background: #10b98133;
+        color: #10b981;
+      }
+      .badge-warning {
+        background: #f59e0b33;
+        color: #f59e0b;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="sidebar">
+        <div class="logo">ELIZAOS</div>
+        <div class="version">Airdrop Architecture Demo</div>
+
+        <div class="nav-item active" onclick="showView('overview')">
+          <span class="nav-icon">🏗️</span>
+          <span>架构总览</span>
+        </div>
+
+        <div class="nav-item" onclick="showView('agent')">
+          <span class="nav-icon">🤖</span>
+          <span>Agent 层</span>
+        </div>
+
+        <div class="nav-item" onclick="showView('plugin')">
+          <span class="nav-icon">🔌</span>
+          <span>Plugin 层</span>
+        </div>
+
+        <div class="nav-item" onclick="showView('instance')">
+          <span class="nav-icon">🔑</span>
+          <span>Instance 层</span>
+        </div>
+
+        <div class="nav-item" onclick="showView('execution')">
+          <span class="nav-icon">▶️</span>
+          <span>执行演示</span>
+        </div>
+
+        <div class="nav-item" onclick="showView('batch')">
+          <span class="nav-icon">📊</span>
+          <span>批量执行</span>
+        </div>
+      </div>
+
+      <div class="main">
+        <div id="content"></div>
+      </div>
+    </div>
+
+    <div id="modal" class="modal">
+      <div class="modal-content">
+        <span class="modal-close" onclick="closeModal()">×</span>
+        <div id="modal-body"></div>
+      </div>
+    </div>
+
+    <script>
+      let selectedAgent = 'hey-airdrop';
+      let selectedPlugin = 'vm-browser';
+      let selectedInstance = '0x6cbE...9Ae7';
+
+      function showView(view) {
+        document.querySelectorAll('.nav-item').forEach((item) => {
+          item.classList.remove('active');
+        });
+        event.target.closest('.nav-item').classList.add('active');
+
+        const content = document.getElementById('content');
+
+        if (view === 'overview') {
+          content.innerHTML = getOverviewHTML();
+        } else if (view === 'agent') {
+          content.innerHTML = getAgentHTML();
+        } else if (view === 'plugin') {
+          content.innerHTML = getPluginHTML();
+        } else if (view === 'instance') {
+          content.innerHTML = getInstanceHTML();
+        } else if (view === 'execution') {
+          content.innerHTML = getExecutionHTML();
+        } else if (view === 'batch') {
+          content.innerHTML = getBatchHTML();
+        }
+      }
+
+      function getOverviewHTML() {
+        return `
+        <div class="header">
+          <h1>🏗️ 空投架构总览</h1>
+          <p>三层架构：Instance（身份隔离）→ Agent（业务逻辑）→ Plugin（执行能力）</p>
+        </div>
+        <div class="content">
+          <div class="architecture-diagram">
+            <div class="layer">
+              <div class="layer-title">📦 Instance 层（身份隔离）</div>
+              <div class="layer-desc">
+                • 1 个 EOA 地址 = 1 个 Instance<br>
+                • 30,000 个 EOA = 30,000 个独立实例<br>
+                • 每个 Instance 拥有独立的身份和状态
+              </div>
+              <div class="items-grid">
+                <div class="item-card">
+                  <div class="item-name">Instance #1</div>
+                  <div class="item-desc">0x6cbE...9Ae7</div>
+                </div>
+                <div class="item-card">
+                  <div class="item-name">Instance #2</div>
+                  <div class="item-desc">0x742d...bEb0</div>
+                </div>
+                <div class="item-card">
+                  <div class="item-name">Instance #...</div>
+                  <div class="item-desc">...</div>
+                </div>
+                <div class="item-card">
+                  <div class="item-name">Instance #30000</div>
+                  <div class="item-desc">0xFFFF...FFFF</div>
+                </div>
+              </div>
+            </div>
+            
+            <div style="text-align:center;font-size:24px;color:#666;margin:16px 0;">↓ 调用</div>
+            
+            <div class="layer">
+              <div class="layer-title">🤖 Agent 层（业务逻辑）</div>
+              <div class="layer-desc">
+                • Agent 封装完整的业务流程<br>
+                • 一个 Agent 可以调用多个 Plugin<br>
+                • 可以选择性使用不同的执行方式
+              </div>
+              <div class="items-grid">
+                <div class="item-card">
+                  <div class="item-name">🎯 Hey Airdrop Agent</div>
+                  <div class="item-desc">Hey.xyz 空投流程</div>
+                </div>
+                <div class="item-card">
+                  <div class="item-name">🌿 Lens Airdrop Agent</div>
+                  <div class="item-desc">Lens Protocol 空投</div>
+                </div>
+                <div class="item-card">
+                  <div class="item-name">🐦 Twitter Agent</div>
+                  <div class="item-desc">Twitter 社交养号</div>
+                </div>
+                <div class="item-card">
+                  <div class="item-name">💰 Balance Agent</div>
+                  <div class="item-desc">余额监控</div>
+                </div>
+              </div>
+            </div>
+            
+            <div style="text-align:center;font-size:24px;color:#666;margin:16px 0;">↓ 选择并调用</div>
+            
+            <div class="layer">
+              <div class="layer-title">🔌 Plugin 层（执行能力）</div>
+              <div class="layer-desc">
+                • Plugin 提供底层执行能力<br>
+                • 不同 Plugin 有不同的特性和适用场景<br>
+                • Agent 根据需求选择合适的 Plugin
+              </div>
+              <div class="items-grid">
+                <div class="item-card">
+                  <div class="item-name">🖥️ VM Browser Plugin</div>
+                  <div class="item-desc">VM 内浏览器（强隔离）</div>
+                </div>
+                <div class="item-card">
+                  <div class="item-name">🌐 Host Browser Plugin</div>
+                  <div class="item-desc">宿主机浏览器（快速）</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div style="text-align:center;margin-top:32px;">
+            <button class="btn btn-primary" onclick="showView('execution')">
+              查看完整执行流程 →
+            </button>
+          </div>
+        </div>
+      `;
+      }
+
+      function getAgentHTML() {
+        return `
+        <div class="header">
+          <h1>🤖 Agent 层 - 业务逻辑</h1>
+          <p>Agent 封装完整的空投流程，点击 Agent 查看其配置的 Plugins</p>
+        </div>
+        <div class="content">
+          <div class="items-grid">
+            <div class="item-card ${selectedAgent === 'hey-airdrop' ? 'selected' : ''}" 
+                 onclick="selectAgent('hey-airdrop')">
+              <div class="item-name">🎯 Hey Airdrop Agent</div>
+              <div class="item-desc">完整的 Hey.xyz 空投流程</div>
+              <div style="margin-top:8px;font-size:11px;color:#666;">
+                点击查看 Plugins →
+              </div>
+            </div>
+            <div class="item-card ${selectedAgent === 'lens-airdrop' ? 'selected' : ''}"
+                 onclick="selectAgent('lens-airdrop')">
+              <div class="item-name">🌿 Lens Airdrop Agent</div>
+              <div class="item-desc">Lens Protocol 空投任务</div>
+              <div style="margin-top:8px;font-size:11px;color:#666;">
+                点击查看 Plugins →
+              </div>
+            </div>
+          </div>
+          
+          <div id="agent-detail" style="margin-top:32px;"></div>
+        </div>
+      `;
+      }
+
+      function selectAgent(agent) {
+        selectedAgent = agent;
+        showView('agent');
+
+        const detail = document.getElementById('agent-detail');
+        if (agent === 'hey-airdrop') {
+          detail.innerHTML = `
+          <div class="architecture-diagram">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
+              <h3>Agent Settings</h3>
+              <span style="font-size:12px;color:#666;">Configure your AI agent's behaviour and capabilities</span>
+            </div>
+            
+            <div style="border-bottom:1px solid #222;margin-bottom:24px;">
+              <div style="display:flex;gap:24px;">
+                <div style="padding:12px 0;border-bottom:2px solid #667eea;color:#fff;font-size:14px;cursor:pointer;">
+                  Plugins
+                </div>
+                <div style="padding:12px 0;color:#666;font-size:14px;cursor:pointer;">
+                  Basic Info
+                </div>
+                <div style="padding:12px 0;color:#666;font-size:14px;cursor:pointer;">
+                  Content
+                </div>
+                <div style="padding:12px 0;color:#666;font-size:14px;cursor:pointer;">
+                  Style
+                </div>
+              </div>
+            </div>
+            
+            <div style="margin-bottom:24px;">
+              <h4 style="font-size:16px;margin-bottom:16px;">Plugins</h4>
+              <div style="background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:16px;">
+                <div style="font-size:13px;font-weight:600;margin-bottom:12px;">Currently Enabled</div>
+                <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;">
+                  <span style="background:#667eea;color:#fff;padding:6px 12px;border-radius:16px;font-size:12px;display:inline-flex;align-items:center;gap:6px;">
+                    @elizaos/plugin-vm-browser
+                    <span style="cursor:pointer;opacity:0.7;hover:opacity:1;">×</span>
+                  </span>
+                  <span style="background:#667eea;color:#fff;padding:6px 12px;border-radius:16px;font-size:12px;display:inline-flex;align-items:center;gap:6px;">
+                    @elizaos/plugin-host-browser
+                    <span style="cursor:pointer;opacity:0.7;hover:opacity:1;">×</span>
+                  </span>
+                  <span style="background:#667eea;color:#fff;padding:6px 12px;border-radius:16px;font-size:12px;display:inline-flex;align-items:center;gap:6px;">
+                    @elizaos/plugin-wallet
+                    <span style="cursor:pointer;opacity:0.7;hover:opacity:1;">×</span>
+                  </span>
+                  <span style="background:#667eea;color:#fff;padding:6px 12px;border-radius:16px;font-size:12px;display:inline-flex;align-items:center;gap:6px;">
+                    @elizaos/plugin-hey
+                    <span style="cursor:pointer;opacity:0.7;hover:opacity:1;">×</span>
+                  </span>
+                </div>
+                <div style="font-size:12px;color:#999;">
+                  ● Essential plugins provide core functionality
+                </div>
+              </div>
+            </div>
+            
+            <div style="margin-bottom:24px;">
+              <div style="font-size:13px;font-weight:600;margin-bottom:12px;">Available Plugins</div>
+              <div style="background:#0a0a0a;border:1px solid #222;border-radius:8px;padding:16px;">
+                <div style="display:grid;gap:12px;">
+                  <div style="display:flex;justify-content:space-between;align-items:center;padding:12px;background:#111;border-radius:6px;">
+                    <div>
+                      <div style="font-size:13px;font-weight:600;">@elizaos/plugin-lens</div>
+                      <div style="font-size:11px;color:#666;">Lens Protocol integration</div>
+                    </div>
+                    <button class="btn btn-secondary" style="padding:6px 16px;font-size:12px;">Add</button>
+                  </div>
+                  <div style="display:flex;justify-content:space-between;align-items:center;padding:12px;background:#111;border-radius:6px;">
+                    <div>
+                      <div style="font-size:13px;font-weight:600;">@elizaos/plugin-twitter</div>
+                      <div style="font-size:11px;color:#666;">Twitter automation</div>
+                    </div>
+                    <button class="btn btn-secondary" style="padding:6px 16px;font-size:12px;">Add</button>
+                  </div>
+                  <div style="display:flex;justify-content:space-between;align-items:center;padding:12px;background:#111;border-radius:6px;">
+                    <div>
+                      <div style="font-size:13px;font-weight:600;">@elizaos/plugin-discord</div>
+                      <div style="font-size:11px;color:#666;">Discord bot capabilities</div>
+                    </div>
+                    <button class="btn btn-secondary" style="padding:6px 16px;font-size:12px;">Add</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div style="background:#1a1a1a;border-left:4px solid #667eea;padding:16px;border-radius:6px;margin-bottom:24px;">
+              <div style="font-size:13px;font-weight:600;margin-bottom:8px;">💡 Plugin 架构说明</div>
+              <div style="font-size:12px;color:#999;line-height:1.6;">
+                • <strong>Agent</strong> 是一个完整的 AI 身份（如 "Hey Airdrop Agent"）<br>
+                • <strong>Plugin</strong> 为 Agent 提供具体能力（浏览器控制、钱包操作、dApp 交互等）<br>
+                • 一个 Agent 可以启用多个 Plugins，组合出复杂的功能<br>
+                • 不同的 Plugin 可以选择性启用，灵活配置 Agent 的能力范围
+              </div>
+            </div>
+            
+            <div style="text-align:right;padding-top:16px;border-top:1px solid #222;">
+              <button class="btn btn-secondary" style="margin-right:12px;">Reset</button>
+              <button class="btn btn-primary">Save</button>
+            </div>
+          </div>
+        `;
+        }
+      }
+
+      function getPluginHTML() {
+        return `
+        <div class="header">
+          <h1>🔌 Plugin 层 - 执行能力</h1>
+          <p>不同的 Plugin 提供不同的执行方式和特性</p>
+        </div>
+        <div class="content">
+          <div class="plugin-comparison">
+            <div class="comparison-card">
+              <div class="comparison-title">🖥️ VM Browser Plugin</div>
+              <div class="comparison-item">
+                <span>隔离性</span>
+                <span class="badge badge-success">✅ 完全隔离</span>
+              </div>
+              <div class="comparison-item">
+                <span>防女巫</span>
+                <span class="badge badge-success">✅ 最强</span>
+              </div>
+              <div class="comparison-item">
+                <span>速度</span>
+                <span class="badge badge-warning">⚠️ 慢（VM启动）</span>
+              </div>
+              <div class="comparison-item">
+                <span>并发</span>
+                <span class="badge badge-warning">⚠️ 最多2个</span>
+              </div>
+              <div class="comparison-item">
+                <span>成本</span>
+                <span class="badge badge-warning">⚠️ 高</span>
+              </div>
+              <div class="comparison-item">
+                <span>适用场景</span>
+                <span>高价值空投</span>
+              </div>
+            </div>
+            
+            <div class="comparison-card">
+              <div class="comparison-title">🌐 Host Browser Plugin</div>
+              <div class="comparison-item">
+                <span>隔离性</span>
+                <span class="badge badge-warning">⚠️ 共享宿主机</span>
+              </div>
+              <div class="comparison-item">
+                <span>防女巫</span>
+                <span class="badge badge-warning">⚠️ 较弱</span>
+              </div>
+              <div class="comparison-item">
+                <span>速度</span>
+                <span class="badge badge-success">✅ 快</span>
+              </div>
+              <div class="comparison-item">
+                <span>并发</span>
+                <span class="badge badge-success">✅ 可以更多</span>
+              </div>
+              <div class="comparison-item">
+                <span>成本</span>
+                <span class="badge badge-success">✅ 低</span>
+              </div>
+              <div class="comparison-item">
+                <span>适用场景</span>
+                <span>批量小任务</span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="architecture-diagram" style="margin-top:32px;">
+            <h3 style="margin-bottom:16px;">技术实现</h3>
+            <div class="layer">
+              <div class="layer-title">VM Browser Plugin</div>
+              <div class="layer-desc">
+                • 基于 Parallels VM<br>
+                • 使用 Playwright 控制浏览器<br>
+                • 每个 EOA 独立 VM 实例<br>
+                • 完整的指纹隔离和代理配置
+              </div>
+            </div>
+            <div class="layer">
+              <div class="layer-title">Host Browser Plugin</div>
+              <div class="layer-desc">
+                • 直接在 macOS 宿主机运行<br>
+                • 使用 Puppeteer 或 CDP<br>
+                • 共享浏览器实例（不同 Profile）<br>
+                • 适合不需要强隔离的场景
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+      }
+
+      function getInstanceHTML() {
+        return `
+        <div class="header">
+          <h1>🔑 Instance 层 - 身份隔离</h1>
+          <p>每个 EOA 地址对应一个独立的 Instance</p>
+        </div>
+        <div class="content">
+          <div class="architecture-diagram">
+            <h3 style="margin-bottom:16px;">Instance 示例</h3>
+            <div class="items-grid">
+              ${Array.from(
+                { length: 8 },
+                (_, i) => `
+                <div class="item-card" onclick="showInstanceDetail(${i})">
+                  <div class="item-name">Instance #${i + 1}</div>
+                  <div class="item-desc">0x${Math.random().toString(16).slice(2, 8)}...${Math.random().toString(16).slice(2, 6)}</div>
+                </div>
+              `
+              ).join('')}
+            </div>
+            
+            <div style="margin-top:32px;padding:24px;background:#1a1a1a;border-radius:8px;">
+              <h4 style="margin-bottom:16px;">Instance 结构</h4>
+              <pre style="color:#999;font-size:13px;line-height:1.8;">
+{
+  eoaAddress: "0x6cbE62c9Eb937dd5D6Ed630A386581b840889Ae7",
+  agents: [
+    "hey-airdrop-agent",
+    "lens-airdrop-agent",
+    "twitter-agent",
+    "balance-agent"
+  ],
+  runAgent(agentName, params) {
+    // 选择 Plugin 并执行
+    const plugin = params.useVM 
+      ? "vm-browser-plugin" 
+      : "host-browser-plugin";
+    
+    return agent.execute(this.eoaAddress, plugin, params);
+  }
+}</pre>
+            </div>
+          </div>
+        </div>
+      `;
+      }
+
+      function getExecutionHTML() {
+        return `
+        <div class="header">
+          <h1>▶️ 执行演示</h1>
+          <p>模拟一个完整的空投执行流程</p>
+        </div>
+        <div class="content">
+          <div class="architecture-diagram">
+            <h3 style="margin-bottom:24px;">选择执行参数</h3>
+            
+            <div class="layer">
+              <div class="layer-title">1. 选择 Instance</div>
+              <select id="instance-select" style="width:100%;padding:10px;background:#0a0a0a;border:1px solid #333;border-radius:6px;color:#fff;font-size:14px;">
+                <option>Instance #1 (0x6cbE...9Ae7)</option>
+                <option>Instance #2 (0x742d...bEb0)</option>
+              </select>
+            </div>
+            
+            <div class="layer">
+              <div class="layer-title">2. 选择 Agent</div>
+              <select id="agent-select" style="width:100%;padding:10px;background:#0a0a0a;border:1px solid #333;border-radius:6px;color:#fff;font-size:14px;">
+                <option>🎯 Hey Airdrop Agent</option>
+                <option>🌿 Lens Airdrop Agent</option>
+              </select>
+            </div>
+            
+            <div class="layer">
+              <div class="layer-title">3. 选择 Plugin</div>
+              <select id="plugin-select" style="width:100%;padding:10px;background:#0a0a0a;border:1px solid #333;border-radius:6px;color:#fff;font-size:14px;">
+                <option>🖥️ VM Browser Plugin（强隔离）</option>
+                <option>🌐 Host Browser Plugin（快速）</option>
+              </select>
+            </div>
+            
+            <div style="text-align:center;margin-top:24px;">
+              <button class="btn btn-primary" onclick="startExecution()">
+                🚀 开始执行（模拟）
+              </button>
+            </div>
+          </div>
+          
+          <div id="execution-result"></div>
+        </div>
+      `;
+      }
+
+      function getBatchHTML() {
+        return `
+        <div class="header">
+          <h1>📊 批量执行</h1>
+          <p>30,000 个 EOA 的批量空投执行</p>
+        </div>
+        <div class="content">
+          <div class="architecture-diagram">
+            <h3 style="margin-bottom:16px;">批量执行策略</h3>
+            
+            <div class="layer">
+              <div class="layer-title">混合模式（推荐）</div>
+              <div class="layer-desc">
+                • 前 100 个 EOA：使用 VM Browser Plugin（高价值账号）<br>
+                • 后 29,900 个 EOA：使用 Host Browser Plugin（快速批量）<br>
+                • 总耗时估算：~50 小时（2个并发VM）
+              </div>
+            </div>
+            
+            <div class="layer">
+              <div class="layer-title">执行队列</div>
+              <div class="layer-desc">
+                • Mac 硬件限制：最多 2 个 VM 并发<br>
+                • 自动排队机制：Windmill Worker Queue<br>
+                • 失败重试：自动重试 3 次<br>
+                • 进度监控：实时查看执行状态
+              </div>
+            </div>
+            
+            <div style="margin-top:24px;">
+              <h4 style="margin-bottom:12px;">模拟批量执行</h4>
+              <div style="display:flex;gap:12px;margin-bottom:16px;">
+                <input type="number" id="batch-count" value="10" min="1" max="30000" 
+                       style="flex:1;padding:10px;background:#0a0a0a;border:1px solid #333;border-radius:6px;color:#fff;">
+                <button class="btn btn-primary" onclick="startBatchExecution()">
+                  开始批量执行
+                </button>
+              </div>
+              <div id="batch-progress"></div>
+            </div>
+          </div>
+        </div>
+      `;
+      }
+
+      function startExecution() {
+        const result = document.getElementById('execution-result');
+        result.innerHTML = `
+        <div class="execution-log">
+          <div class="log-line info">[2026-01-17 17:15:00] 开始执行...</div>
+          <div class="log-line">[2026-01-17 17:15:01] Instance: 0x6cbE...9Ae7</div>
+          <div class="log-line">[2026-01-17 17:15:01] Agent: Hey Airdrop Agent</div>
+          <div class="log-line">[2026-01-17 17:15:01] Plugin: VM Browser Plugin</div>
+          <div class="log-line">[2026-01-17 17:15:02] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>
+          <div class="log-line info">[2026-01-17 17:15:03] 🖥️  启动 VM...</div>
+          <div class="log-line">[2026-01-17 17:15:05] VM UUID: a55705b2-xxxx-xxxx</div>
+          <div class="log-line success">[2026-01-17 17:15:08] ✅ VM 启动成功</div>
+          <div class="log-line">[2026-01-17 17:15:09] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>
+          <div class="log-line info">[2026-01-17 17:15:10] 🌐 打开浏览器...</div>
+          <div class="log-line">[2026-01-17 17:15:12] 访问 https://hey.xyz</div>
+          <div class="log-line success">[2026-01-17 17:15:15] ✅ 页面加载完成</div>
+          <div class="log-line">[2026-01-17 17:15:16] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>
+          <div class="log-line info">[2026-01-17 17:15:17] 🔐 开始登录...</div>
+          <div class="log-line">[2026-01-17 17:15:18] 点击 "Connect Wallet"</div>
+          <div class="log-line">[2026-01-17 17:15:20] 选择 OneKey 钱包</div>
+          <div class="log-line">[2026-01-17 17:15:22] 切换到 EOA: 0x6cbE...9Ae7</div>
+          <div class="log-line">[2026-01-17 17:15:25] 签名登录请求</div>
+          <div class="log-line success">[2026-01-17 17:15:28] ✅ 登录成功</div>
+          <div class="log-line">[2026-01-17 17:15:29] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>
+          <div class="log-line info">[2026-01-17 17:15:30] 📝 执行任务...</div>
+          <div class="log-line">[2026-01-17 17:15:32] 任务 1/3: 发布帖子</div>
+          <div class="log-line success">[2026-01-17 17:15:35] ✅ 帖子发布成功</div>
+          <div class="log-line">[2026-01-17 17:15:36] 任务 2/3: 点赞</div>
+          <div class="log-line success">[2026-01-17 17:15:38] ✅ 点赞成功</div>
+          <div class="log-line">[2026-01-17 17:15:39] 任务 3/3: 关注</div>
+          <div class="log-line success">[2026-01-17 17:15:41] ✅ 关注成功</div>
+          <div class="log-line">[2026-01-17 17:15:42] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>
+          <div class="log-line info">[2026-01-17 17:15:43] 🎁 领取奖励...</div>
+          <div class="log-line">[2026-01-17 17:15:45] 点击 "Claim Airdrop"</div>
+          <div class="log-line">[2026-01-17 17:15:48] 签名交易</div>
+          <div class="log-line success">[2026-01-17 17:15:52] ✅ 奖励领取成功！</div>
+          <div class="log-line">[2026-01-17 17:15:53] 获得: 100 HEY tokens</div>
+          <div class="log-line">[2026-01-17 17:15:54] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>
+          <div class="log-line info">[2026-01-17 17:15:55] 🧹 清理资源...</div>
+          <div class="log-line">[2026-01-17 17:15:56] 关闭浏览器</div>
+          <div class="log-line">[2026-01-17 17:15:58] 停止 VM</div>
+          <div class="log-line success">[2026-01-17 17:16:00] ✅ 执行完成！</div>
+          <div class="log-line">[2026-01-17 17:16:00] 总耗时: 60 秒</div>
+        </div>
+      `;
+
+        result.scrollIntoView({ behavior: 'smooth' });
+      }
+
+      function startBatchExecution() {
+        const count = document.getElementById('batch-count').value;
+        const progress = document.getElementById('batch-progress');
+
+        progress.innerHTML = `
+        <div class="execution-log">
+          <div class="log-line info">[批量执行] 准备执行 ${count} 个 Instance...</div>
+          <div class="log-line">[批量执行] 模式: 混合（前100用VM，其余用Host）</div>
+          <div class="log-line">[批量执行] 并发: 2 个 VM</div>
+          <div class="log-line">[批量执行] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>
+          <div class="log-line success">[Instance #1] ✅ 完成 (VM模式, 60s)</div>
+          <div class="log-line success">[Instance #2] ✅ 完成 (VM模式, 62s)</div>
+          <div class="log-line info">[Instance #3] 🔄 执行中... (VM模式)</div>
+          <div class="log-line info">[Instance #4] 🔄 执行中... (VM模式)</div>
+          <div class="log-line">[Instance #5-${count}] ⏳ 排队中...</div>
+          <div class="log-line">[批量执行] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>
+          <div class="log-line">[进度] 2/${count} 完成 (${Math.round((2 / count) * 100)}%)</div>
+          <div class="log-line">[预计] 剩余时间: ~${Math.round(((count - 2) * 30) / 60)} 分钟</div>
+        </div>
+      `;
+      }
+
+      function showPluginComparison() {
+        const modal = document.getElementById('modal');
+        const body = document.getElementById('modal-body');
+
+        body.innerHTML = `
+        <div class="modal-title">Plugin 对比</div>
+        <div class="plugin-comparison">
+          <div class="comparison-card">
+            <div class="comparison-title">🖥️ VM Browser Plugin</div>
+            <div class="comparison-item">
+              <span>隔离性</span>
+              <span class="badge badge-success">✅ 完全隔离</span>
+            </div>
+            <div class="comparison-item">
+              <span>防女巫</span>
+              <span class="badge badge-success">✅ 最强</span>
+            </div>
+            <div class="comparison-item">
+              <span>速度</span>
+              <span class="badge badge-warning">⚠️ 慢</span>
+            </div>
+          </div>
+          
+          <div class="comparison-card">
+            <div class="comparison-title">🌐 Host Browser Plugin</div>
+            <div class="comparison-item">
+              <span>隔离性</span>
+              <span class="badge badge-warning">⚠️ 共享</span>
+            </div>
+            <div class="comparison-item">
+              <span>防女巫</span>
+              <span class="badge badge-warning">⚠️ 较弱</span>
+            </div>
+            <div class="comparison-item">
+              <span>速度</span>
+              <span class="badge badge-success">✅ 快</span>
+            </div>
+          </div>
+        </div>
+        
+        <div style="margin-top:24px;text-align:center;">
+          <button class="btn btn-secondary" onclick="closeModal()">关闭</button>
+        </div>
+      `;
+
+        modal.classList.add('show');
+      }
+
+      function closeModal() {
+        document.getElementById('modal').classList.remove('show');
+      }
+
+      function showInstanceDetail(index) {
+        alert(
+          'Instance #' +
+            (index + 1) +
+            ' 详情\\n\\n这是一个模拟的 Instance，实际使用时会包含完整的 EOA 信息和 Agent 列表。'
+        );
+      }
+
+      // 初始化显示
+      showView('overview');
+    </script>
+  </body>
+</html>

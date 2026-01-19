@@ -92,8 +92,16 @@
     "utf-8-validate"
   ],
   "dependencies": {
+    "@elizaos/plugin-binance": "^1.0.0",
+    "@elizaos/plugin-ollama": "^1.2.4",
+    "@elizaos/plugin-openrouter": "^1.5.17",
+    "@elizaos/plugin-zerion": "^0.25.6-alpha.1",
+    "@midscene/web": "^1.2.1",
+    "@supabase/supabase-js": "^2.90.1",
+    "ethers": "^6.16.0",
     "helmet": "^8.1.0",
     "js-yaml": "^4.1.1",
+    "playwright": "^1.57.0",
     "zod": "4.1.13"
   }
 }
