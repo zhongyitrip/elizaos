@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'bun:test';
-import { createCharacter, validateCharacter } from '../services/character-generator';
-import type { EOAAccount } from '../services/character-generator';
+import { createCharacter, validateCharacter } from '../src/services/character-generator';
+import type { EOAAccount } from '../src/services/character-generator';
 
 describe('CharacterGenerator', () => {
     const mockEOA: EOAAccount = {

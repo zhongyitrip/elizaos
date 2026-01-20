@@ -44,14 +44,15 @@ async function generateEOAAddresses() {
     console.log('');
 
     // Validate mnemonic
+    let wallet;
     try {
-        ethers.Wallet.fromMnemonic(mnemonic);
+        wallet = ethers.HDNodeWallet.fromMnemonic(
+            ethers.Mnemonic.fromPhrase(mnemonic)
+        );
         console.log('✅ Mnemonic validated');
     } catch (error) {
         throw new Error('Invalid mnemonic phrase');
     }
-
-    const wallet = ethers.Wallet.fromMnemonic(mnemonic);
     const totalBatches = Math.ceil(totalAddresses / batchSize);
 
     console.log(`\n📦 Processing ${totalBatches} batches...\n`);
@@ -59,7 +60,15 @@ async function generateEOAAddresses() {
     for (let batchNum = 0; batchNum < totalBatches; batchNum++) {
         const startIndex = batchNum * batchSize;
         const endIndex = Math.min(startIndex + batchSize, totalAddresses);
-        const batch = [];
+        const batch: Array<{
+            derivation_index: number;
+            eoa_address: string;
+            private_key: string;
+            metadata: {
+                derivation_path: string;
+                generated_at: string;
+            };
+        }> = [];
 
         console.log(`Batch ${batchNum + 1}/${totalBatches}: Generating addresses ${startIndex} to ${endIndex - 1}...`);
 
