@@ -5,29 +5,31 @@ import { logger } from '@elizaos/core';
  * Free model pool configuration for OpenRouter
  * Models are ordered by priority (fastest/most reliable first)
  * 
- * ⚠️ Updated: 2026-01-24 - Verified with OpenRouter API
- * 📊 Total: 33 free models available
- * 📝 Run `bun run scripts/query-free-models.ts` to update
- */
-/**
- * Free model pool configuration for OpenRouter
- * Models are ordered by priority (fastest/most reliable first)
+ * ⚠️ Updated: 2026-01-24 - Optimized for Quality Priority & Smart Fallback
  * 
- * ⚠️ Updated: 2026-01-24 - Optimized based on benchmark results
+ * Strategy: "Quality First, Speed Second" (质量优先，兼顾速度)
+ * 1. Always prioritize the BEST model (e.g. Gemma 27B) - 永远优先尝试最好的模型
+ * 2. Only fallback if the best model is currently Rate Limited (Cool-down) - 只有最好的模型限流了才降级
+ * 3. Automatically retry the best model after cool-down expires - 冷却结束后立刻切回最好的模型
+ * 
  * 📊 Total: 33 free models available
  * 📝 Run `bun run scripts/query-free-models.ts` to update
  */
 export const FREE_MODEL_POOLS = {
     // Small/Fast models for quick responses
-    // Optimized: Gemma 3 models first, followed by Gemini, then fallback to POWERFUL Large models
-    // Strategy: Use fast models first, but utilize Large model quotas instead of failing!
+    // Priority Order:
+    // 1. Gemma 3 27B (Best Balance)
+    // 2. Gemini 2.0 Flash (Fastest, High Quality, but strict rate limits)
+    // 3. Gemma 3 12B (Safe Backup)
+    // 4. Large Models (Power Backup)
     SMALL: [
-        'google/gemma-3-27b-it:free',            // Priority 1: High reliability, good speed
-        'google/gemma-3-12b-it:free',            // Priority 2: Reliable backup
-        'google/gemini-2.0-flash-exp:free',      // Priority 3: Fastest but rate limited
-        'qwen/qwen3-4b:free',                    // Priority 4: Chinese-friendly
+        'google/gemma-3-27b-it:free',            // Priority 1: High reliability, good speed (主力)
+        'google/gemini-2.0-flash-exp:free',      // Priority 2: Fastest but rate limited (极速)
+        'google/gemma-3-12b-it:free',            // Priority 3: Reliable backup (稳定备份)
+        'qwen/qwen3-4b:free',                    // Priority 4: Chinese-friendly (中文友好)
 
         // 🚀 FALLBACK TO HEAVY HITTERS (Why waste free quota? Use them!)
+        // 当小模型全挂了，用大模型顶上
         'meta-llama/llama-3.1-405b-instruct:free', // Priority 5: The Beast (Slow but free)
         'meta-llama/llama-3.3-70b-instruct:free',  // Priority 6: Solid & Reliable
         'deepseek/deepseek-r1-0528:free',          // Priority 7: DeepSeek
@@ -59,47 +61,75 @@ export const FREE_MODEL_POOLS = {
     ],
 } as const;
 
-// Rotation state to track current index for each pool type
-// This ensures we cycle through models even across different requests
-const rotationState = {
-    SMALL: 0,
-    LARGE: 0,
-    VISION: 0,
-    CODE: 0,
-};
+// Rate Limit Tracker (限流追踪器)
+// Maps modelName -> timestamp (when it was last rate limited)
+// 记录每个模型最后一次报错的时间
+const rateLimitCoolDowns: Record<string, number> = {};
+
+// Cool-down duration in milliseconds (e.g., 60 seconds)
+// After this time, we will try the model again even if it failed before
+// 冷却时间：60秒。60秒后会尝试“复活”该模型。
+const COOLDOWN_DURATION = 60 * 1000;
 
 /**
- * Get model pool based on model type with Round-Robin Rotation
+ * Get model pool based on model type with Smart Prioritization (智能优先级)
  * 
  * Logic:
- * 1. Get the base pool
- * 2. Rotate the array based on current rotation index
- * 3. Increment rotation index for next call
- * 
- * Example: [A, B, C] -> Call 1: [A, B, C], Call 2: [B, C, A], Call 3: [C, A, B]
+ * 1. Get the base pool (Already sorted by Quality/Priority)
+ * 2. Filter out models that are currently in "Cool-down" (剔除还在冷却的模型)
+ * 3. Return the filtered list (返回可用模型列表)
+ * 4. If ALL models are in cool-down, return the full list (Force retry) (如果全挂了，强制重试)
  */
 export function getModelPool(modelType: 'SMALL' | 'LARGE' | 'VISION' | 'CODE'): string[] {
     const pool = FREE_MODEL_POOLS[modelType];
     if (!pool) return [];
 
-    // Get current rotation offset
-    const offset = rotationState[modelType] % pool.length;
+    const now = Date.now();
 
-    // Rotate the pool: [...pool.slice(offset), ...pool.slice(0, offset)]
-    const rotatedPool = [
-        ...pool.slice(offset),
-        ...pool.slice(0, offset)
-    ];
+    // 1. Filter out models that are in cool-down
+    // 过滤掉还在“冷却期”的模型
+    const availableModels = pool.filter(model => {
+        const lastFailure = rateLimitCoolDowns[model];
+        // If never failed OR cool-down expired, it's available
+        // 如果没挂过，或者已经过了冷却期，就可用
+        if (!lastFailure) return true;
 
-    // Increment for next time
-    rotationState[modelType] = (rotationState[modelType] + 1) % pool.length;
+        const timeSinceFailure = now - lastFailure;
+        if (timeSinceFailure > COOLDOWN_DURATION) {
+            // Cool-down expired, remove from blacklist
+            delete rateLimitCoolDowns[model];
+            return true;
+        }
 
-    return rotatedPool;
+        return false;
+    });
+
+    // 2. If we have available models, use them (They preserve the original priority order)
+    // 如果有可用模型，按优先级顺序返回
+    if (availableModels.length > 0) {
+        return availableModels;
+    }
+
+    // 3. If ALL models are in cool-down, reset everyone and return full pool
+    // This prevents complete blockage if everything is failing temporarily
+    // 紧急情况：所有人都挂了，那就死马当活马医，全部重试
+    return [...pool];
+}
+
+/**
+ * Report a Rate Limit failure for a model
+ * Call this when a model returns 429 or 402
+ * 报告限流：把模型关进“小黑屋”冷却
+ */
+export function reportRateLimit(modelName: string) {
+    rateLimitCoolDowns[modelName] = Date.now();
+    logger.warn(`⚠️ [OpenRouter Pool] Model [${modelName}] marked rate-limited (Cool-down for ${COOLDOWN_DURATION / 1000}s)`);
 }
 
 /**
  * Try models from pool with automatic fallback
  * Returns the first successful model name
+ * 尝试模型池：自动处理回退
  */
 export async function tryModelsFromPool<T>(
     runtime: IAgentRuntime,
@@ -109,11 +139,30 @@ export async function tryModelsFromPool<T>(
 ): Promise<{ result: T; modelUsed: string }> {
     const errors: Array<{ model: string; error: string }> = [];
 
+    // Smart logic: We don't rotate blindly. We try models in priority order.
+    // If a model fails with Rate Limit, we mark it for cool-down.
+
+    // Refresh pool to exclude cooled-down models (if this list came from getModelPool, it might be stale if we iterate long)
+    // For now, we trust the input pool is fresh.
+
     for (const modelName of modelPool) {
         try {
+            // Skip if recently marked as rate-limited (double check)
+            // 二次检查：防止在循环过程中被其他请求标记
+            const lastFailure = rateLimitCoolDowns[modelName];
+            if (lastFailure && (Date.now() - lastFailure < COOLDOWN_DURATION)) {
+                continue;
+            }
+
             logger.debug(`[OpenRouter Free Pool] Trying ${context} with model: ${modelName}`);
             const result = await attemptFn(modelName);
             logger.log(`[OpenRouter Free Pool] ✅ Success with model: ${modelName}`);
+
+            // Success! Remove from cool-down if it was there (early parole)
+            if (rateLimitCoolDowns[modelName]) {
+                delete rateLimitCoolDowns[modelName];
+            }
+
             return { result, modelUsed: modelName };
         } catch (error: unknown) {
             const errorMsg = error instanceof Error ? error.message : String(error);
@@ -121,8 +170,10 @@ export async function tryModelsFromPool<T>(
             errors.push({ model: modelName, error: errorMsg });
 
             // Check if it's a rate limit error (429) or quota error
-            if (errorMsg.includes('429') || errorMsg.includes('rate limit') || errorMsg.includes('quota')) {
-                logger.warn(`[OpenRouter Free Pool] Rate limit hit on ${modelName}, trying next...`);
+            // 检查是否是限流错误
+            if (errorMsg.includes('429') || errorMsg.includes('rate limit') || errorMsg.includes('quota') || errorMsg.includes('402')) {
+                logger.warn(`[OpenRouter Free Pool] Rate limit hit on ${modelName}, marking for cool-down...`);
+                reportRateLimit(modelName); // Mark for cool-down
                 continue;
             }
 
