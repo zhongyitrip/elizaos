@@ -13,9 +13,11 @@ import {
   getJsonRepairFunction,
   handleObjectGenerationError,
 } from "../utils/helpers";
+import { getModelOrPool, tryModelsFromPool } from "../utils/free-model-pool";
 
 /**
  * Common object generation logic for both small and large models
+ * WITH FREE MODEL POOL SUPPORT - automatically tries multiple models on rate limits
  */
 async function generateObjectWithModel(
   runtime: IAgentRuntime,
@@ -23,32 +25,45 @@ async function generateObjectWithModel(
   params: ObjectGenerationParams,
 ): Promise<Record<string, unknown>> {
   const openrouter = createOpenRouterProvider(runtime);
-  const modelName =
+  const customModel =
     modelType === ModelType.OBJECT_SMALL
       ? getSmallModel(runtime)
       : getLargeModel(runtime);
   const modelLabel =
     modelType === ModelType.OBJECT_SMALL ? "OBJECT_SMALL" : "OBJECT_LARGE";
 
-  const finalModelName = modelName || 'google/gemini-2.0-flash-001';
+  // Get model pool (custom model first if specified, then free pool)
+  const modelPool = getModelOrPool(
+    customModel,
+    modelType === ModelType.OBJECT_SMALL ? 'SMALL' : 'LARGE'
+  );
 
-  logger.log(`[OpenRouter] Using ${modelLabel} model: ${finalModelName}`);
+  logger.log(`[OpenRouter] ${modelLabel} model pool: ${modelPool.join(', ')}`);
   const temperature = params.temperature ?? 0.7;
 
   try {
-    const { object, usage } = await generateObject({
-      model: openrouter.chat(finalModelName),
-      ...(params.schema && { schema: jsonSchema(params.schema as JSONSchema7) }),
-      output: params.schema ? "object" : "no-schema",
-      prompt: params.prompt,
-      temperature: temperature,
-      experimental_repairText: getJsonRepairFunction(),
-    });
+    const { result, modelUsed } = await tryModelsFromPool(
+      runtime,
+      modelPool,
+      async (modelName) => {
+        const { object, usage } = await generateObject({
+          model: openrouter.chat(modelName),
+          ...(params.schema && { schema: jsonSchema(params.schema as JSONSchema7) }),
+          output: params.schema ? "object" : "no-schema",
+          prompt: params.prompt,
+          temperature: temperature,
+          experimental_repairText: getJsonRepairFunction(),
+        });
 
-    if (usage) {
-      emitModelUsageEvent(runtime, modelType, params.prompt, usage);
-    }
-    return object as Record<string, unknown>;
+        if (usage) {
+          emitModelUsageEvent(runtime, modelType, params.prompt, usage);
+        }
+        return object as Record<string, unknown>;
+      },
+      `${modelLabel} object generation`
+    );
+
+    return result;
   } catch (error: unknown) {
     return handleObjectGenerationError(error);
   }

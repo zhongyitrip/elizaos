@@ -16,9 +16,11 @@ import {
 } from "../utils/config";
 import { parseImageDescriptionResponse } from "../utils/helpers";
 import { deleteImage, saveBase64Image } from "../utils/image-storage";
+import { getModelOrPool, tryModelsFromPool } from "../utils/free-model-pool";
 
 /**
  * IMAGE_DESCRIPTION model handler
+ * WITH FREE MODEL POOL SUPPORT - automatically tries multiple vision models on rate limits
  */
 export async function handleImageDescription(
   runtime: IAgentRuntime,
@@ -26,8 +28,7 @@ export async function handleImageDescription(
 ): Promise<{ title: string; description: string }> {
   let imageUrl: string;
   let promptText: string | undefined;
-  const modelName = getImageModel(runtime);
-  logger.log(`[OpenRouter] Using IMAGE_DESCRIPTION model: ${modelName}`);
+  const customModel = getImageModel(runtime);
   const maxOutputTokens = 300;
 
   if (typeof params === "string") {
@@ -43,6 +44,10 @@ export async function handleImageDescription(
 
   const openrouter = createOpenRouterProvider(runtime);
 
+  // Get vision model pool
+  const modelPool = getModelOrPool(customModel, 'VISION');
+  logger.log(`[OpenRouter] IMAGE_DESCRIPTION model pool: ${modelPool.join(', ')}`);
+
   const messages = [
     {
       role: "user" as const,
@@ -53,16 +58,21 @@ export async function handleImageDescription(
     },
   ];
 
-  const finalModelName = modelName || 'x-ai/grok-2-vision-1212';
-
   try {
-    const model = openrouter.chat(finalModelName);
-
-    const { text: responseText } = await generateText({
-      model: model,
-      messages: messages,
-      maxOutputTokens: maxOutputTokens,
-    });
+    const { result: responseText } = await tryModelsFromPool(
+      runtime,
+      modelPool,
+      async (modelName) => {
+        const model = openrouter.chat(modelName);
+        const { text } = await generateText({
+          model: model,
+          messages: messages,
+          maxOutputTokens: maxOutputTokens,
+        });
+        return text;
+      },
+      'image description'
+    );
 
     return parseImageDescriptionResponse(responseText);
   } catch (error: unknown) {
