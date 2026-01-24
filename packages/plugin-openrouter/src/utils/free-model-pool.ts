@@ -9,38 +9,85 @@ import { logger } from '@elizaos/core';
  * 📊 Total: 33 free models available
  * 📝 Run `bun run scripts/query-free-models.ts` to update
  */
+/**
+ * Free model pool configuration for OpenRouter
+ * Models are ordered by priority (fastest/most reliable first)
+ * 
+ * ⚠️ Updated: 2026-01-24 - Optimized based on benchmark results
+ * 📊 Total: 33 free models available
+ * 📝 Run `bun run scripts/query-free-models.ts` to update
+ */
 export const FREE_MODEL_POOLS = {
     // Small/Fast models for quick responses
+    // Optimized: Gemma 3 models are most reliable, Gemini has aggressive rate limits
     SMALL: [
-        'google/gemini-2.0-flash-exp:free',      // Google's flagship, 1M context, fastest
-        'google/gemma-3-27b-it:free',            // Google Gemma 27B, stable
-        'qwen/qwen3-4b:free',                    // Qwen 4B, Chinese-friendly
-        'google/gemma-3-12b-it:free',            // Google Gemma 12B, balanced
+        'google/gemma-3-27b-it:free',            // Priority 1: High reliability, good speed
+        'google/gemma-3-12b-it:free',            // Priority 2: Reliable backup
+        'google/gemini-2.0-flash-exp:free',      // Priority 3: Fastest but rate limited
+        'qwen/qwen3-4b:free',                    // Priority 4: Chinese-friendly
     ],
 
     // Large/Reasoning models for complex tasks
     LARGE: [
-        'meta-llama/llama-3.1-405b-instruct:free', // Meta's largest, 405B params, best reasoning
-        'deepseek/deepseek-r1-0528:free',          // DeepSeek R1, strong reasoning
-        'qwen/qwen3-next-80b-a3b-instruct:free',   // Qwen 80B, Chinese reasoning
-        'meta-llama/llama-3.3-70b-instruct:free',  // Meta Llama 70B, general purpose
-        'nousresearch/hermes-3-llama-3.1-405b:free', // Hermes 405B, alternative
+        'meta-llama/llama-3.1-405b-instruct:free', // Priority 1: Best reasoning (405B)
+        'meta-llama/llama-3.3-70b-instruct:free',  // Priority 2: General purpose reliable
+        'deepseek/deepseek-r1-0528:free',          // Priority 3: DeepSeek reasoning
+        'qwen/qwen3-next-80b-a3b-instruct:free',   // Priority 4: Chinese reasoning
+        'nousresearch/hermes-3-llama-3.1-405b:free', // Priority 5: Alternative 405B
     ],
 
     // Vision models for image analysis
     VISION: [
-        'google/gemini-2.0-flash-exp:free',      // Gemini has vision support, 1M context
-        'qwen/qwen-2.5-vl-7b-instruct:free',     // Qwen VL for vision, Chinese-friendly
-        'nvidia/nemotron-nano-12b-v2-vl:free',   // NVIDIA Nemotron VL
-        'allenai/molmo-2-8b:free',               // AllenAI Molmo, image understanding
+        'google/gemini-2.0-flash-exp:free',      // Priority 1: Best vision context (1M)
+        'qwen/qwen-2.5-vl-7b-instruct:free',     // Priority 2: Chinese vision
+        'nvidia/nemotron-nano-12b-v2-vl:free',   // Priority 3: NVIDIA vision
+        'allenai/molmo-2-8b:free',               // Priority 4: Standard vision
+    ],
+
+    // Code generation models
+    CODE: [
+        'qwen/qwen3-coder:free',                 // Priority 1: Code specialist
+        'mistralai/devstral-2512:free',          // Priority 2: Development tasks
+        'deepseek/deepseek-r1-0528:free',        // Priority 3: Code reasoning
     ],
 } as const;
 
+// Rotation state to track current index for each pool type
+// This ensures we cycle through models even across different requests
+const rotationState = {
+    SMALL: 0,
+    LARGE: 0,
+    VISION: 0,
+    CODE: 0,
+};
+
 /**
- * Get model pool based on model type
+ * Get model pool based on model type with Round-Robin Rotation
+ * 
+ * Logic:
+ * 1. Get the base pool
+ * 2. Rotate the array based on current rotation index
+ * 3. Increment rotation index for next call
+ * 
+ * Example: [A, B, C] -> Call 1: [A, B, C], Call 2: [B, C, A], Call 3: [C, A, B]
  */
-export function getModelPool(modelType: 'SMALL' | 'LARGE' | 'VISION'): string[] {
-    return [...FREE_MODEL_POOLS[modelType]]; // Return a copy
+export function getModelPool(modelType: 'SMALL' | 'LARGE' | 'VISION' | 'CODE'): string[] {
+    const pool = FREE_MODEL_POOLS[modelType];
+    if (!pool) return [];
+
+    // Get current rotation offset
+    const offset = rotationState[modelType] % pool.length;
+
+    // Rotate the pool: [...pool.slice(offset), ...pool.slice(0, offset)]
+    const rotatedPool = [
+        ...pool.slice(offset),
+        ...pool.slice(0, offset)
+    ];
+
+    // Increment for next time
+    rotationState[modelType] = (rotationState[modelType] + 1) % pool.length;
+
+    return rotatedPool;
 }
 
 /**
