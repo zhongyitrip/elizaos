@@ -16,7 +16,7 @@ import {
 } from "../utils/config";
 import { parseImageDescriptionResponse } from "../utils/helpers";
 import { deleteImage, saveBase64Image } from "../utils/image-storage";
-import { getModelOrPool, tryModelsFromPool } from "../utils/free-model-pool";
+import { getModelOrPool, tryModelsFromPool } from "../utils/free-model-rotating";
 
 /**
  * IMAGE_DESCRIPTION model handler

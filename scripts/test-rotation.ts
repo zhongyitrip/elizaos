@@ -1,5 +1,5 @@
 
-import { getModelPool, FREE_MODEL_POOLS } from '../packages/plugin-openrouter/src/utils/free-model-pool.ts';
+import { getModelPool, FREE_MODEL_POOLS } from '../packages/plugin-openrouter/src/utils/free-model-rotating.ts';
 
 /**
  * Test script to verify model rotation logic

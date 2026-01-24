@@ -13,7 +13,7 @@ import {
   getJsonRepairFunction,
   handleObjectGenerationError,
 } from "../utils/helpers";
-import { getModelOrPool, tryModelsFromPool } from "../utils/free-model-pool";
+import { getModelOrPool, tryModelsFromPool } from "../utils/free-model-rotating";
 
 /**
  * Common object generation logic for both small and large models

@@ -9,7 +9,7 @@ import { generateText, streamText } from "ai";
 import { createOpenRouterProvider } from "../providers";
 import { getSmallModel, getLargeModel } from "../utils/config";
 import { emitModelUsageEvent } from "../utils/events";
-import { getModelOrPool, tryModelsFromPool } from "../utils/free-model-pool";
+import { getModelOrPool, tryModelsFromPool } from "../utils/free-model-rotating";
 
 /**
  * Handle streaming text generation
