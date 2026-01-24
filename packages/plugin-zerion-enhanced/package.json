@@ -1,6 +1,6 @@
 {
   "name": "@elizaos/plugin-zerion-enhanced",
-  "version": "0.1.0",
+  "version": "1.7.3-beta.1",
   "description": "Enhanced Zerion plugin with detailed token information and chain filtering",
   "type": "module",
   "main": "dist/index.js",
