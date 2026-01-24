@@ -19,12 +19,19 @@ import { logger } from '@elizaos/core';
  */
 export const FREE_MODEL_POOLS = {
     // Small/Fast models for quick responses
-    // Optimized: Gemma 3 models are most reliable, Gemini has aggressive rate limits
+    // Optimized: Gemma 3 models first, followed by Gemini, then fallback to POWERFUL Large models
+    // Strategy: Use fast models first, but utilize Large model quotas instead of failing!
     SMALL: [
         'google/gemma-3-27b-it:free',            // Priority 1: High reliability, good speed
         'google/gemma-3-12b-it:free',            // Priority 2: Reliable backup
         'google/gemini-2.0-flash-exp:free',      // Priority 3: Fastest but rate limited
         'qwen/qwen3-4b:free',                    // Priority 4: Chinese-friendly
+
+        // 🚀 FALLBACK TO HEAVY HITTERS (Why waste free quota? Use them!)
+        'meta-llama/llama-3.1-405b-instruct:free', // Priority 5: The Beast (Slow but free)
+        'meta-llama/llama-3.3-70b-instruct:free',  // Priority 6: Solid & Reliable
+        'deepseek/deepseek-r1-0528:free',          // Priority 7: DeepSeek
+        'qwen/qwen3-next-80b-a3b-instruct:free',   // Priority 8: Qwen Large
     ],
 
     // Large/Reasoning models for complex tasks
