@@ -1,11 +1,7 @@
 #!/usr/bin/env bun
 /**
- * OpenRouter Free Model Pool - Performance & Availability Test
- * 
- * Tests all free models in the pool for:
- * - Response speed (latency)
- * - Availability (success rate)
- * - Rate limits (requests per minute)
+ * Comprehensive Free Model Testing Script
+ * Tests each model multiple times with various prompts
  */
 
 import { config } from 'dotenv';
@@ -16,58 +12,77 @@ const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
 
 if (!OPENROUTER_API_KEY) {
-    console.error('❌ OPENROUTER_API_KEY not found in .env');
+    console.error('❌ Error: OPENROUTER_API_KEY not found in .env');
+    console.error('💡 Please add your API key to .env file:');
+    console.error('   OPENROUTER_API_KEY=sk-or-v1-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx');
     process.exit(1);
 }
 
-// Free models to test
-const FREE_MODELS = {
-    SMALL: [
-        'google/gemini-2.0-flash-exp:free',
-        'qwen/qwen-2.5-72b-instruct:free',
-        'meta-llama/llama-3.3-70b-instruct:free',
-    ],
-    LARGE: [
-        'deepseek/deepseek-r1:free',
-        'google/gemini-2.0-flash-exp:free',
-        'meta-llama/llama-3.3-70b-instruct:free',
-        'qwen/qwen-2.5-72b-instruct:free',
-    ],
-    VISION: [
-        'google/gemini-2.0-flash-exp:free',
-        'qwen/qwen-2-vl-72b-instruct:free',
-    ],
-};
+// All free models to test
+const FREE_MODELS = [
+    'google/gemini-2.0-flash-exp:free',
+    'qwen/qwen-2.5-72b-instruct:free',
+    'deepseek/deepseek-r1:free',
+    'meta-llama/llama-3.3-70b-instruct:free',
+    'qwen/qwen-2-vl-72b-instruct:free',
+];
 
-// Test prompts
-const TEST_PROMPTS = {
-    simple: 'Say "Hello, World!" in one sentence.',
-    medium: 'Explain what blockchain is in 2-3 sentences.',
-    complex: 'Write a simple JavaScript function to calculate fibonacci numbers.',
-};
+// Test prompts with varying complexity
+const TEST_PROMPTS = [
+    {
+        name: 'Simple Greeting',
+        prompt: 'Say "Hello, World!" in one sentence.',
+        expectedTokens: 10,
+    },
+    {
+        name: 'Medium Explanation',
+        prompt: 'Explain what blockchain is in 2-3 sentences.',
+        expectedTokens: 50,
+    },
+    {
+        name: 'Code Generation',
+        prompt: 'Write a simple JavaScript function to calculate the sum of an array.',
+        expectedTokens: 100,
+    },
+    {
+        name: 'Complex Reasoning',
+        prompt: 'Explain the difference between async/await and Promises in JavaScript, with examples.',
+        expectedTokens: 200,
+    },
+    {
+        name: 'Chinese Task',
+        prompt: '用中文解释什么是区块链，2-3句话。',
+        expectedTokens: 50,
+    },
+];
 
 interface TestResult {
     model: string;
-    category: string;
-    available: boolean;
-    avgLatency: number;
-    minLatency: number;
-    maxLatency: number;
-    successRate: number;
-    errorMessage?: string;
+    modelShortName: string;
+    prompt: string;
+    promptName: string;
+    attempt: number;
+    success: boolean;
+    latency: number;
+    tokensGenerated?: number;
+    error?: string;
     rateLimitHit: boolean;
-    estimatedRPM?: number;
+    timestamp: string;
 }
 
 /**
  * Test a single model with a prompt
  */
-async function testModel(
+async function testModelOnce(
     modelName: string,
     prompt: string,
-    retries: number = 3
-): Promise<{ success: boolean; latency: number; error?: string; rateLimitHit: boolean }> {
+    promptName: string,
+    attempt: number
+): Promise<TestResult> {
     const startTime = Date.now();
+    const timestamp = new Date().toISOString();
+
+    const modelShortName = modelName.split('/')[1]?.split(':')[0] || modelName;
 
     try {
         const response = await fetch(`${OPENROUTER_BASE_URL}/chat/completions`, {
@@ -83,7 +98,7 @@ async function testModel(
                 messages: [
                     { role: 'user', content: prompt }
                 ],
-                max_tokens: 100,
+                max_tokens: 500,
                 temperature: 0.7,
             }),
         });
@@ -93,11 +108,18 @@ async function testModel(
         if (!response.ok) {
             const errorText = await response.text();
             const isRateLimit = response.status === 429 || errorText.includes('rate limit');
+
             return {
+                model: modelName,
+                modelShortName,
+                prompt,
+                promptName,
+                attempt,
                 success: false,
                 latency,
-                error: `HTTP ${response.status}: ${errorText}`,
+                error: `HTTP ${response.status}: ${errorText.substring(0, 100)}`,
                 rateLimitHit: isRateLimit,
+                timestamp,
             };
         }
 
@@ -106,174 +128,309 @@ async function testModel(
         if (data.error) {
             const isRateLimit = data.error.message?.includes('rate limit') || data.error.code === 429;
             return {
+                model: modelName,
+                modelShortName,
+                prompt,
+                promptName,
+                attempt,
                 success: false,
                 latency,
-                error: data.error.message || JSON.stringify(data.error),
+                error: data.error.message || JSON.stringify(data.error).substring(0, 100),
                 rateLimitHit: isRateLimit,
+                timestamp,
             };
         }
 
+        const tokensGenerated = data.choices?.[0]?.message?.content?.split(' ').length || 0;
+
         return {
+            model: modelName,
+            modelShortName,
+            prompt,
+            promptName,
+            attempt,
             success: true,
             latency,
+            tokensGenerated,
             rateLimitHit: false,
+            timestamp,
         };
     } catch (error) {
         const latency = Date.now() - startTime;
         return {
+            model: modelName,
+            modelShortName,
+            prompt,
+            promptName,
+            attempt,
             success: false,
             latency,
             error: error instanceof Error ? error.message : String(error),
             rateLimitHit: false,
+            timestamp,
         };
     }
 }
 
 /**
- * Test a model multiple times to get average performance
+ * Test a model with all prompts, multiple attempts each
  */
-async function testModelPerformance(
+async function testModelComprehensive(
     modelName: string,
-    category: string,
-    testCount: number = 5
-): Promise<TestResult> {
-    console.log(`\n🧪 Testing ${modelName}...`);
+    attemptsPerPrompt: number = 3
+): Promise<TestResult[]> {
+    const modelShortName = modelName.split('/')[1]?.split(':')[0] || modelName;
+    console.log(`\n${'='.repeat(80)}`);
+    console.log(`🧪 Testing Model: ${modelShortName}`);
+    console.log(`${'='.repeat(80)}\n`);
 
-    const results: Array<{ success: boolean; latency: number; rateLimitHit: boolean }> = [];
-    let rateLimitHit = false;
+    const results: TestResult[] = [];
+    let consecutiveRateLimits = 0;
 
-    for (let i = 0; i < testCount; i++) {
-        console.log(`  Attempt ${i + 1}/${testCount}...`);
-        const result = await testModel(modelName, TEST_PROMPTS.simple);
-        results.push(result);
+    for (const testPrompt of TEST_PROMPTS) {
+        console.log(`\n📝 Prompt: ${testPrompt.name}`);
+        console.log(`   "${testPrompt.prompt.substring(0, 50)}..."`);
 
-        if (result.rateLimitHit) {
-            rateLimitHit = true;
-            console.log(`  ⚠️ Rate limit hit, stopping test`);
+        for (let attempt = 1; attempt <= attemptsPerPrompt; attempt++) {
+            // Check if we hit too many rate limits
+            if (consecutiveRateLimits >= 2) {
+                console.log(`   ⚠️  Skipping remaining tests due to consecutive rate limits`);
+                break;
+            }
+
+            process.stdout.write(`   Attempt ${attempt}/${attemptsPerPrompt}... `);
+
+            const result = await testModelOnce(
+                modelName,
+                testPrompt.prompt,
+                testPrompt.name,
+                attempt
+            );
+
+            results.push(result);
+
+            if (result.success) {
+                console.log(`✅ ${result.latency}ms (${result.tokensGenerated} tokens)`);
+                consecutiveRateLimits = 0;
+            } else if (result.rateLimitHit) {
+                console.log(`⚠️  Rate limit hit`);
+                consecutiveRateLimits++;
+            } else {
+                console.log(`❌ ${result.error?.substring(0, 50)}`);
+                consecutiveRateLimits = 0;
+            }
+
+            // Wait between requests to avoid rate limits
+            if (attempt < attemptsPerPrompt) {
+                const waitTime = 3000; // 3 seconds
+                process.stdout.write(`   Waiting ${waitTime / 1000}s... `);
+                await new Promise(resolve => setTimeout(resolve, waitTime));
+                console.log('✓');
+            }
+        }
+
+        // If we hit rate limits, stop testing this model
+        if (consecutiveRateLimits >= 2) {
             break;
         }
 
-        if (result.success) {
-            console.log(`  ✅ Success (${result.latency}ms)`);
-        } else {
-            console.log(`  ❌ Failed: ${result.error}`);
-        }
-
-        // Wait 2 seconds between requests to avoid rate limits
-        if (i < testCount - 1) {
-            await new Promise(resolve => setTimeout(resolve, 2000));
+        // Wait longer between different prompts
+        if (TEST_PROMPTS.indexOf(testPrompt) < TEST_PROMPTS.length - 1) {
+            const waitTime = 5000; // 5 seconds
+            console.log(`\n   ⏳ Waiting ${waitTime / 1000}s before next prompt...`);
+            await new Promise(resolve => setTimeout(resolve, waitTime));
         }
     }
 
-    const successfulResults = results.filter(r => r.success);
-    const latencies = successfulResults.map(r => r.latency);
-
-    return {
-        model: modelName,
-        category,
-        available: successfulResults.length > 0,
-        avgLatency: latencies.length > 0 ? Math.round(latencies.reduce((a, b) => a + b, 0) / latencies.length) : 0,
-        minLatency: latencies.length > 0 ? Math.min(...latencies) : 0,
-        maxLatency: latencies.length > 0 ? Math.max(...latencies) : 0,
-        successRate: Math.round((successfulResults.length / results.length) * 100),
-        errorMessage: results.find(r => !r.success)?.error,
-        rateLimitHit,
-        estimatedRPM: rateLimitHit ? 5 : undefined, // Conservative estimate
-    };
+    return results;
 }
 
 /**
- * Main test function
+ * Generate summary statistics
  */
-async function runTests() {
-    console.log('🚀 OpenRouter Free Model Pool - Performance Test');
-    console.log('================================================\n');
-    console.log(`Testing ${Object.values(FREE_MODELS).flat().length} models...`);
-    console.log(`Test started at: ${new Date().toLocaleString()}\n`);
+function generateSummary(allResults: TestResult[]) {
+    console.log(`\n\n${'='.repeat(80)}`);
+    console.log(`📊 COMPREHENSIVE TEST RESULTS SUMMARY`);
+    console.log(`${'='.repeat(80)}\n`);
+
+    // Group by model
+    const byModel = new Map<string, TestResult[]>();
+    for (const result of allResults) {
+        if (!byModel.has(result.modelShortName)) {
+            byModel.set(result.modelShortName, []);
+        }
+        byModel.get(result.modelShortName)!.push(result);
+    }
+
+    // Print model-by-model summary
+    console.log('## Model Performance Summary\n');
+    console.log('| Model | Success Rate | Avg Latency | Min | Max | Rate Limits |');
+    console.log('|-------|--------------|-------------|-----|-----|-------------|');
+
+    const modelStats: Array<{
+        model: string;
+        successRate: number;
+        avgLatency: number;
+        minLatency: number;
+        maxLatency: number;
+        rateLimits: number;
+    }> = [];
+
+    for (const [modelName, results] of byModel) {
+        const successful = results.filter(r => r.success);
+        const latencies = successful.map(r => r.latency);
+        const successRate = (successful.length / results.length) * 100;
+        const avgLatency = latencies.length > 0
+            ? Math.round(latencies.reduce((a, b) => a + b, 0) / latencies.length)
+            : 0;
+        const minLatency = latencies.length > 0 ? Math.min(...latencies) : 0;
+        const maxLatency = latencies.length > 0 ? Math.max(...latencies) : 0;
+        const rateLimits = results.filter(r => r.rateLimitHit).length;
+
+        modelStats.push({
+            model: modelName,
+            successRate,
+            avgLatency,
+            minLatency,
+            maxLatency,
+            rateLimits,
+        });
+
+        const successIcon = successRate >= 90 ? '✅' : successRate >= 70 ? '⚠️' : '❌';
+        const rateLimitIcon = rateLimits === 0 ? '✅' : rateLimits < 3 ? '⚠️' : '❌';
+
+        console.log(
+            `| ${modelName.padEnd(20)} | ${successIcon} ${successRate.toFixed(0)}% | ` +
+            `${avgLatency}ms | ${minLatency}ms | ${maxLatency}ms | ${rateLimitIcon} ${rateLimits} |`
+        );
+    }
+
+    // Print prompt-by-prompt summary
+    console.log('\n\n## Performance by Task Type\n');
+    console.log('| Task | Best Model | Avg Latency | Success Rate |');
+    console.log('|------|------------|-------------|--------------|');
+
+    const byPrompt = new Map<string, TestResult[]>();
+    for (const result of allResults) {
+        if (!byPrompt.has(result.promptName)) {
+            byPrompt.set(result.promptName, []);
+        }
+        byPrompt.get(result.promptName)!.push(result);
+    }
+
+    for (const [promptName, results] of byPrompt) {
+        const successful = results.filter(r => r.success);
+        const successRate = (successful.length / results.length) * 100;
+
+        // Find best model for this prompt
+        const byModelForPrompt = new Map<string, number[]>();
+        for (const result of successful) {
+            if (!byModelForPrompt.has(result.modelShortName)) {
+                byModelForPrompt.set(result.modelShortName, []);
+            }
+            byModelForPrompt.get(result.modelShortName)!.push(result.latency);
+        }
+
+        let bestModel = 'N/A';
+        let bestAvgLatency = Infinity;
+        for (const [model, latencies] of byModelForPrompt) {
+            const avg = latencies.reduce((a, b) => a + b, 0) / latencies.length;
+            if (avg < bestAvgLatency) {
+                bestAvgLatency = avg;
+                bestModel = model;
+            }
+        }
+
+        const avgLatency = successful.length > 0
+            ? Math.round(successful.reduce((a, b) => a + b.latency, 0) / successful.length)
+            : 0;
+
+        console.log(
+            `| ${promptName.padEnd(20)} | ${bestModel.padEnd(20)} | ` +
+            `${Math.round(bestAvgLatency)}ms | ${successRate.toFixed(0)}% |`
+        );
+    }
+
+    // Print recommendations
+    console.log('\n\n## 🎯 Recommendations\n');
+
+    // Fastest model
+    const fastestModel = modelStats.sort((a, b) => a.avgLatency - b.avgLatency)[0];
+    if (fastestModel && fastestModel.successRate >= 70) {
+        console.log(`⚡ **Fastest Model**: ${fastestModel.model} (${fastestModel.avgLatency}ms avg)`);
+    }
+
+    // Most reliable model
+    const mostReliable = modelStats.sort((a, b) => b.successRate - a.successRate)[0];
+    if (mostReliable) {
+        console.log(`🛡️  **Most Reliable**: ${mostReliable.model} (${mostReliable.successRate.toFixed(0)}% success rate)`);
+    }
+
+    // Models without rate limits
+    const noRateLimits = modelStats.filter(m => m.rateLimits === 0);
+    if (noRateLimits.length > 0) {
+        console.log(`\n✅ **Models Without Rate Limits**:`);
+        noRateLimits.forEach(m => console.log(`   - ${m.model}`));
+    }
+
+    // Models with rate limits
+    const withRateLimits = modelStats.filter(m => m.rateLimits > 0);
+    if (withRateLimits.length > 0) {
+        console.log(`\n⚠️  **Models With Rate Limits**:`);
+        withRateLimits.forEach(m => console.log(`   - ${m.model} (${m.rateLimits} hits)`));
+    }
+
+    return modelStats;
+}
+
+/**
+ * Main test runner
+ */
+async function runComprehensiveTests() {
+    console.log('🚀 OpenRouter Free Model Pool - Comprehensive Testing');
+    console.log('====================================================\n');
+    console.log(`📅 Test started at: ${new Date().toLocaleString()}`);
+    console.log(`🔑 API Key: ${OPENROUTER_API_KEY.substring(0, 20)}...`);
+    console.log(`📊 Testing ${FREE_MODELS.length} models`);
+    console.log(`📝 Using ${TEST_PROMPTS.length} different prompts`);
+    console.log(`🔄 3 attempts per prompt\n`);
 
     const allResults: TestResult[] = [];
 
-    // Test SMALL models
-    console.log('\n📊 Testing SMALL models...');
-    for (const model of FREE_MODELS.SMALL) {
-        const result = await testModelPerformance(model, 'SMALL', 3);
-        allResults.push(result);
+    for (const model of FREE_MODELS) {
+        const results = await testModelComprehensive(model, 3);
+        allResults.push(...results);
+
+        // Wait between models
+        if (FREE_MODELS.indexOf(model) < FREE_MODELS.length - 1) {
+            const waitTime = 10000; // 10 seconds
+            console.log(`\n⏳ Waiting ${waitTime / 1000}s before testing next model...\n`);
+            await new Promise(resolve => setTimeout(resolve, waitTime));
+        }
     }
 
-    // Test LARGE models (skip duplicates)
-    console.log('\n📊 Testing LARGE models...');
-    const uniqueLargeModels = FREE_MODELS.LARGE.filter(
-        m => !FREE_MODELS.SMALL.includes(m)
-    );
-    for (const model of uniqueLargeModels) {
-        const result = await testModelPerformance(model, 'LARGE', 3);
-        allResults.push(result);
-    }
-
-    // Test VISION models (skip duplicates)
-    console.log('\n📊 Testing VISION models...');
-    const uniqueVisionModels = FREE_MODELS.VISION.filter(
-        m => !FREE_MODELS.SMALL.includes(m) && !FREE_MODELS.LARGE.includes(m)
-    );
-    for (const model of uniqueVisionModels) {
-        const result = await testModelPerformance(model, 'VISION', 3);
-        allResults.push(result);
-    }
-
-    // Print results
-    console.log('\n\n📊 Test Results Summary');
-    console.log('======================\n');
-
-    // Sort by availability and speed
-    const sortedResults = allResults.sort((a, b) => {
-        if (a.available !== b.available) return b.available ? 1 : -1;
-        return a.avgLatency - b.avgLatency;
-    });
-
-    // Print table
-    console.log('| Model | Category | Available | Avg Latency | Success Rate | Rate Limit |');
-    console.log('|-------|----------|-----------|-------------|--------------|------------|');
-
-    for (const result of sortedResults) {
-        const modelShort = result.model.split('/')[1]?.split(':')[0] || result.model;
-        const available = result.available ? '✅' : '❌';
-        const latency = result.avgLatency > 0 ? `${result.avgLatency}ms` : 'N/A';
-        const successRate = `${result.successRate}%`;
-        const rateLimit = result.rateLimitHit ? '⚠️ Yes' : '✅ No';
-
-        console.log(`| ${modelShort} | ${result.category} | ${available} | ${latency} | ${successRate} | ${rateLimit} |`);
-    }
+    // Generate summary
+    const stats = generateSummary(allResults);
 
     // Save results to file
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const filename = `test-results-${timestamp}.json`;
-    await Bun.write(filename, JSON.stringify(sortedResults, null, 2));
-    console.log(`\n💾 Results saved to: ${filename}`);
+    const resultsFile = `test-results-comprehensive-${timestamp}.json`;
 
-    // Print recommendations
-    console.log('\n\n🎯 Recommendations');
-    console.log('==================\n');
+    await Bun.write(resultsFile, JSON.stringify({
+        metadata: {
+            testDate: new Date().toISOString(),
+            modelsTest: FREE_MODELS.length,
+            promptsUsed: TEST_PROMPTS.length,
+            attemptsPerPrompt: 3,
+            totalTests: allResults.length,
+        },
+        results: allResults,
+        summary: stats,
+    }, null, 2));
 
-    const fastestModel = sortedResults.find(r => r.available);
-    if (fastestModel) {
-        console.log(`⚡ Fastest model: ${fastestModel.model} (${fastestModel.avgLatency}ms)`);
-    }
-
-    const mostReliable = sortedResults
-        .filter(r => r.available)
-        .sort((a, b) => b.successRate - a.successRate)[0];
-    if (mostReliable) {
-        console.log(`🛡️  Most reliable: ${mostReliable.model} (${mostReliable.successRate}% success)`);
-    }
-
-    const noRateLimit = sortedResults.filter(r => r.available && !r.rateLimitHit);
-    if (noRateLimit.length > 0) {
-        console.log(`\n✅ Models without rate limits (${noRateLimit.length}):`);
-        noRateLimit.forEach(r => console.log(`   - ${r.model}`));
-    }
-
-    console.log('\n✨ Test completed!');
+    console.log(`\n\n💾 Detailed results saved to: ${resultsFile}`);
+    console.log(`\n✨ Test completed at: ${new Date().toLocaleString()}`);
 }
 
-// Run tests
-runTests().catch(console.error);
+// Run the comprehensive tests
+runComprehensiveTests().catch(console.error);

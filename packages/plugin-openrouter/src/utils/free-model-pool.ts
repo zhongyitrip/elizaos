@@ -4,27 +4,35 @@ import { logger } from '@elizaos/core';
 /**
  * Free model pool configuration for OpenRouter
  * Models are ordered by priority (fastest/most reliable first)
+ * 
+ * ⚠️ Updated: 2026-01-24 - Verified with OpenRouter API
+ * 📊 Total: 33 free models available
+ * 📝 Run `bun run scripts/query-free-models.ts` to update
  */
 export const FREE_MODEL_POOLS = {
     // Small/Fast models for quick responses
     SMALL: [
-        'google/gemini-2.0-flash-exp:free',      // Google's flagship, fast & free
-        'qwen/qwen-2.5-72b-instruct:free',       // Alibaba Qwen, good for Chinese
-        'meta-llama/llama-3.3-70b-instruct:free', // Meta's Llama
+        'google/gemini-2.0-flash-exp:free',      // Google's flagship, 1M context, fastest
+        'google/gemma-3-27b-it:free',            // Google Gemma 27B, stable
+        'qwen/qwen3-4b:free',                    // Qwen 4B, Chinese-friendly
+        'google/gemma-3-12b-it:free',            // Google Gemma 12B, balanced
     ],
 
     // Large/Reasoning models for complex tasks
     LARGE: [
-        'deepseek/deepseek-r1:free',             // DeepSeek R1, strong reasoning
-        'google/gemini-2.0-flash-exp:free',      // Fallback to Gemini
-        'meta-llama/llama-3.3-70b-instruct:free', // Meta's Llama
-        'qwen/qwen-2.5-72b-instruct:free',       // Alibaba Qwen
+        'meta-llama/llama-3.1-405b-instruct:free', // Meta's largest, 405B params, best reasoning
+        'deepseek/deepseek-r1-0528:free',          // DeepSeek R1, strong reasoning
+        'qwen/qwen3-next-80b-a3b-instruct:free',   // Qwen 80B, Chinese reasoning
+        'meta-llama/llama-3.3-70b-instruct:free',  // Meta Llama 70B, general purpose
+        'nousresearch/hermes-3-llama-3.1-405b:free', // Hermes 405B, alternative
     ],
 
     // Vision models for image analysis
     VISION: [
-        'google/gemini-2.0-flash-exp:free',      // Gemini has vision support
-        'qwen/qwen-2-vl-72b-instruct:free',      // Qwen VL for vision
+        'google/gemini-2.0-flash-exp:free',      // Gemini has vision support, 1M context
+        'qwen/qwen-2.5-vl-7b-instruct:free',     // Qwen VL for vision, Chinese-friendly
+        'nvidia/nemotron-nano-12b-v2-vl:free',   // NVIDIA Nemotron VL
+        'allenai/molmo-2-8b:free',               // AllenAI Molmo, image understanding
     ],
 } as const;
 
