@@ -12,7 +12,7 @@
     "start:debug": "cross-env NODE_NO_WARNINGS=1 LOG_LEVEL=debug elizaos start",
     "start:app": "turbo run start --filter=./packages/app",
     "dev": "bun run scripts/dev-watch.js",
-    "build": "turbo run build --filter=!./packages/app --filter=!@elizaos/config --filter=!@elizaos/plugin-airdrop --filter=!@elizaos/plugin-zerion-enhanced",
+    "build": "turbo run build --filter=!./packages/app --filter=!@elizaos/config --filter=!@elizaos/plugin-airdrop-web --filter=!@elizaos/plugin-zerion-enhanced",
     "build:client": "turbo run build --filter=@elizaos/client",
     "format": "turbo run format --filter=./packages/*",
     "format:check": "turbo run format:check --filter=./packages/*",
@@ -93,6 +93,7 @@
   ],
   "dependencies": {
     "@elizaos/plugin-binance": "^1.0.0",
+    "@elizaos/plugin-google-genai": "^1.1.0",
     "@elizaos/plugin-ollama": "^1.2.4",
     "@elizaos/plugin-openrouter": "^1.5.17",
     "@elizaos/plugin-zerion": "^0.25.6-alpha.1",

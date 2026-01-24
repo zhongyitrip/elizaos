@@ -1,0 +1,81 @@
+midsceneVersion: 1.2.1
+cacheId: qwen2b-cache
+caches:
+  - type: plan
+    prompt: 点击 Login 按钮
+    yamlWorkflow: |
+      tasks:
+        - name: 点击 Login 按钮
+          flow:
+            - aiTap: ''
+              locate: Login button
+  - type: plan
+    prompt: 点击 Connect 按钮
+    yamlWorkflow: |
+      tasks:
+        - name: 点击 Connect 按钮
+          flow:
+            - aiTap: ''
+              locate: Connect 按钮
+  - type: plan
+    prompt: 点击 Log In 按钮
+    yamlWorkflow: |
+      tasks:
+        - name: 点击 Log In 按钮
+          flow:
+            - aiTap: ''
+              locate: Log In button
+  - type: plan
+    prompt: 点击登录按钮
+    yamlWorkflow: |
+      tasks:
+        - name: 点击登录按钮
+          flow:
+            - aiTap: ''
+              locate: Sign in button
+  - type: plan
+    prompt: 点击右上角的 Connect wallet 按钮
+    yamlWorkflow: |
+      tasks:
+        - name: 点击右上角的 Connect wallet 按钮
+          flow:
+            - aiRightClick: ''
+              locate:
+                bbox:
+                  - 1147
+                  - 115
+                  - 1225
+                  - 163
+              prompt: Connect wallet
+  - type: locate
+    prompt: Login button
+    cache:
+      xpaths:
+        - >-
+          /html/body/main[1]/div[1]/aside[2]/div[1]/button[2]/div[normalize-space()="Login"]
+  - type: locate
+    prompt: Connect 按钮
+    cache:
+      xpaths:
+        - >-
+          /html/body/div[1]/span[1]/div[1]/div[1]/div[2]/nav[1]/div[1]/div[2]/div[3]/div[1]/div[1]/div[1]/button[normalize-space()="连接"]
+  - type: locate
+    prompt: Log In button
+    cache:
+      xpaths:
+        - >-
+          /html/body/div[8]/div[2]/div[1]/div[1]/div[normalize-space()="接受所有
+          Cookie 全部拒绝Cookie 设置"]
+  - type: locate
+    prompt: Sign in button
+    cache:
+      xpaths:
+        - /html/body/div[1]/div[4]/main[1]/div[1]/div[2]/form[1]/div[3]/input[1]
+  - type: locate
+    cache:
+      xpaths:
+        - >-
+          /html/body/div[1]/main[1]/div[normalize-space()="Core InstanceV3Main
+          Ethereum market with the largest selection of assets and yield
+          options​FavouriteTotal market size$44.25BTotal available$24.57BTotal
+          borrows$18.51B"]

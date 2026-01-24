@@ -1,10 +1,10 @@
 {
-    "name": "@elizaos/plugin-airdrop",
+    "name": "@elizaos/plugin-airdrop-web",
     "version": "0.1.0",
     "type": "module",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
-    "description": "ElizaOS plugin for managing 30,000 EOA addresses for airdrop hunting",
+    "description": "ElizaOS plugin for web-based airdrop hunting with browser automation",
     "repository": {
         "type": "git",
         "url": "https://github.com/your-username/elizaos"

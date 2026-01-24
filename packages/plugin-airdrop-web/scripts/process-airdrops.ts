@@ -7,7 +7,7 @@ import { AirdropBatchProcessor } from '../src/services/batch-processor';
  * It processes them in batches of 50, with each batch taking approximately 10 minutes.
  * 
  * Usage:
- *   cd packages/plugin-airdrop
+ *   cd packages/plugin-airdrop-web
  *   bun run scripts/process-airdrops.ts
  * 
  * Environment variables required:

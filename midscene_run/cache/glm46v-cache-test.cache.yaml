@@ -1,0 +1,55 @@
+midsceneVersion: 1.2.1
+cacheId: glm46v-cache-test
+caches:
+  - type: plan
+    prompt: 点击 Connect 按钮
+    yamlWorkflow: |
+      tasks:
+        - name: 点击 Connect 按钮
+          flow:
+            - aiTap: ''
+              locate: The Connect button
+            - sleep: 2000
+  - type: plan
+    prompt: 点击登录按钮
+    yamlWorkflow: |
+      tasks:
+        - name: 点击登录按钮
+          flow:
+            - aiTap: ''
+              locate: Sign in button
+            - sleep: 1000
+  - type: plan
+    prompt: 点击 Login 按钮
+    yamlWorkflow: |
+      tasks:
+        - name: 点击 Login 按钮
+          flow:
+            - aiTap: ''
+              locate: Login button
+            - sleep: 1000
+            - sleep: 1000
+  - type: locate
+    prompt: Login button
+    cache:
+      xpaths:
+        - >-
+          /html/body/main[1]/div[1]/aside[2]/div[1]/button[2]/div[normalize-space()="Login"]
+  - type: locate
+    prompt: Login with Family option
+    cache:
+      xpaths:
+        - >-
+          /html/body/div[2]/div[1]/div[1]/div[1]/div[2]/div[1]/div[1]/div[2]/button[normalize-space()="Login
+          with Family"]
+  - type: locate
+    prompt: The Connect button
+    cache:
+      xpaths:
+        - >-
+          /html/body/div[1]/span[1]/div[1]/div[1]/div[2]/nav[1]/div[1]/div[2]/div[3]/div[1]/div[1]/div[1]/button[1]/span[normalize-space()="连接"]
+  - type: locate
+    prompt: Sign in button
+    cache:
+      xpaths:
+        - /html/body/div[1]/div[4]/main[1]/div[1]/div[2]/form[1]/div[3]/input[1]

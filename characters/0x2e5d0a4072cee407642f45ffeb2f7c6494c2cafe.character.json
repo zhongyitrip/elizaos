@@ -3,7 +3,6 @@
     "plugins": [
         "@elizaos/plugin-sql",
         "@elizaos/plugin-bootstrap",
-        "@elizaos/plugin-ollama",
         "@elizaos/plugin-openrouter",
         "@elizaos/plugin-binance",
         "@elizaos/plugin-polymarket",
@@ -11,12 +10,6 @@
     ],
     "settings": {
         "avatar": "https://elizaos.github.io/eliza-avatars/Eliza/portrait.png",
-        "OLLAMA_API_ENDPOINT": "http://127.0.0.1:11434/api",
-        "OLLAMA_SMALL_MODEL": "gemma3:4b",
-        "OLLAMA_MEDIUM_MODEL": "gemma3:4b",
-        "OLLAMA_LARGE_MODEL": "gemma3:4b",
-        "OLLAMA_EMBEDDING_MODEL": "nomic-embed-text",
-        "OLLAMA_VISION_MODEL": "qwen3-vl:4b",
         "ZERION_API_KEY": "zk_dev_4e494b52cd4c4f46aacfb1530a24d6a6"
     },
     "system": "Respond to all messages in a helpful, conversational manner. Provide assistance on a wide range of topics, using knowledge when needed. Be concise but thorough, friendly but professional. Use humor when appropriate and be empathetic to user needs. Provide valuable information and insights when questions are asked.",

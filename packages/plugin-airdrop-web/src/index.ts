@@ -3,27 +3,25 @@ import { AirdropBatchProcessor } from './services/batch-processor';
 import { createCharacter, createCharacters } from './services/character-generator';
 
 /**
- * ElizaOS Airdrop Plugin
+ * ElizaOS Airdrop Web Plugin
  * 
- * This plugin provides functionality for managing 30,000 EOA addresses
- * for airdrop hunting operations.
+ * This plugin provides web-based airdrop hunting with browser automation.
  * 
- * Features:
- * - Dynamic character generation from EOA addresses
- * - Batch processing (50 agents at a time)
- * - Supabase database integration
- * - HD wallet support
+ * Architecture:
+ * - PM2 manages 10 concurrent instances
+ * - Each instance runs 1 Agent for 1 EOA
+ * - Worker pattern: fetch task → execute → mark done → repeat
  * 
  * Usage:
  *   Add to your character configuration:
  *   {
- *     "plugins": ["@elizaos/plugin-airdrop"]
+ *     "plugins": ["@elizaos/plugin-airdrop-web"]
  *   }
  */
 
-export const airdropPlugin: Plugin = {
-    name: '@elizaos/plugin-airdrop',
-    description: 'Manage 30,000 EOA addresses for airdrop hunting',
+export const airdropWebPlugin: Plugin = {
+    name: '@elizaos/plugin-airdrop-web',
+    description: 'Web-based airdrop hunting with browser automation',
 
     // Services provided by this plugin
     services: [],
@@ -45,4 +43,4 @@ export { AirdropBatchProcessor, createCharacter, createCharacters };
 export type { EOAAccount } from './services/character-generator';
 
 // Default export
-export default airdropPlugin;
+export default airdropWebPlugin;

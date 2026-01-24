@@ -1,0 +1,47 @@
+midsceneVersion: 1.2.1
+cacheId: glm41v-cache-test
+caches:
+  - type: plan
+    prompt: 点击 Login 按钮
+    yamlWorkflow: |
+      tasks:
+        - name: 点击 Login 按钮
+          flow:
+            - aiTap: ''
+              locate: Login button
+  - type: plan
+    prompt: 点击 Connect 按钮
+    yamlWorkflow: |
+      tasks:
+        - name: 点击 Connect 按钮
+          flow:
+            - aiTap: ''
+              locate: Connect (连接) button
+  - type: locate
+    prompt: Login button
+    cache:
+      xpaths:
+        - >-
+          /html/body/main[1]/div[1]/aside[2]/div[1]/button[normalize-space()="Login"]
+  - type: locate
+    prompt: Connect (连接) button
+    cache:
+      xpaths:
+        - >-
+          /html/body/div[1]/span[1]/div[1]/div[1]/div[2]/nav[1]/div[1]/div[2]/div[3]/div[1]/div[1]/div[1]/button[normalize-space()="连接"]
+  - type: locate
+    prompt: 绿色的“Sign in”按钮
+    cache:
+      xpaths:
+        - /html/body/div[1]/div[4]/main[1]/div[1]/div[2]/form[1]/div[3]/input[1]
+  - type: locate
+    prompt: Password 输入框
+    cache:
+      xpaths:
+        - >-
+          /html/body/div[1]/div[4]/main[1]/div[1]/div[2]/form[normalize-space()="Username
+          or email address Password Forgot password?"]
+  - type: locate
+    prompt: Password 输入框
+    cache:
+      xpaths: []

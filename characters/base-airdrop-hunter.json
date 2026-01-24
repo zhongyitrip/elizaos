@@ -7,12 +7,6 @@
         "@elizaos/plugin-airdrop"
     ],
     "settings": {
-        "OLLAMA_API_ENDPOINT": "http://127.0.0.1:11434/api",
-        "OLLAMA_SMALL_MODEL": "gemma3:4b",
-        "OLLAMA_MEDIUM_MODEL": "gemma3:4b",
-        "OLLAMA_LARGE_MODEL": "gemma3:4b",
-        "OLLAMA_EMBEDDING_MODEL": "nomic-embed-text",
-        "OLLAMA_VISION_MODEL": "qwen3-vl:4b"
     },
     "system": "You are an airdrop hunting agent. Your role is to execute DApp interactions for airdrop farming while maintaining anti-sybil best practices. You operate with a specific EOA wallet address and execute tasks assigned to you.",
     "bio": [

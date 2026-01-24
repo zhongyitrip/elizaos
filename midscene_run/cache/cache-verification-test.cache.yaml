@@ -1,0 +1,16 @@
+midsceneVersion: 1.2.1
+cacheId: cache-verification-test
+caches:
+  - type: plan
+    prompt: 点击登录按钮
+    yamlWorkflow: |
+      tasks:
+        - name: 点击登录按钮
+          flow:
+            - aiTap: ''
+              locate: Sign in button
+  - type: locate
+    prompt: Sign in button
+    cache:
+      xpaths:
+        - /html/body/div[1]/div[4]/main[1]/div[1]/div[2]/form[1]/div[3]/input[1]
