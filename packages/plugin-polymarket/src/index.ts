@@ -24,12 +24,18 @@ export { getBestPriceAction } from './actions/getBestPrice';
 export { getMidpointPriceAction } from './actions/getMidpointPrice';
 export { getSpreadAction } from './actions/getSpread';
 export { placeOrderAction } from './actions/placeOrder';
+export { cancelOrderAction } from './actions/cancelOrder';
+export { getPositionsAction } from './actions/getPositions';
 export { createApiKeyAction } from './actions/createApiKey';
 export { revokeApiKeyAction } from './actions/revokeApiKey';
 export { getAllApiKeysAction } from './actions/getAllApiKeys';
+export { cancelOrdersAction } from './actions/cancelOrders';
+export { cancelAllOrdersAction } from './actions/cancelAllOrders';
+export { placeOrdersAction } from './actions/placeOrders';
+export { getLastTradePriceAction } from './actions/getLastTradePrice';
 
 // Export utilities and services for advanced use cases
-export { initializeClobClient } from './utils/clobClient';
+export { initializeClobClient, initializeClobClientWithCreds } from './utils/clobClient';
 export { callLLMWithTimeout } from './utils/llmHelpers';
 export { PolymarketService } from './plugin';
 
@@ -68,6 +74,7 @@ export const character: Character = {
   name: 'Eliza',
   plugins: [
     '@elizaos/plugin-sql',
+    '@elizaos/plugin-polymarket', // Hardcoded for reliability
     ...(process.env.ANTHROPIC_API_KEY ? ['@elizaos/plugin-anthropic'] : []),
     ...(process.env.OPENAI_API_KEY ? ['@elizaos/plugin-openai'] : []),
     ...(!process.env.OPENAI_API_KEY ? ['@elizaos/plugin-local-ai'] : []),

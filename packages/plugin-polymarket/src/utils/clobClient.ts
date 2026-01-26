@@ -20,7 +20,6 @@ export interface ApiKeyCreds {
  */
 export async function initializeClobClient(runtime: IAgentRuntime): Promise<ClobClient> {
   const clobApiUrl = runtime.getSetting('CLOB_API_URL') || 'https://clob.polymarket.com';
-  const clobWsUrl = runtime.getSetting('CLOB_WS_URL') || 'wss://ws-subscriptions-clob.polymarket.com/ws/';
 
   const privateKey =
     runtime.getSetting('WALLET_PRIVATE_KEY') ||
@@ -33,10 +32,10 @@ export async function initializeClobClient(runtime: IAgentRuntime): Promise<Clob
     );
   }
 
-  logger.info(`[initializeClobClient] Initializing CLOB client with HTTP URL: ${clobApiUrl}` + (clobWsUrl ? ` and WS URL: ${clobWsUrl}` : ' (no WS URL provided)'));
+  logger.info(`[initializeClobClient] Initializing CLOB client with HTTP URL: ${clobApiUrl}`);
 
   try {
-    const wallet = new ethers.Wallet(privateKey);
+    const wallet = new ethers.Wallet(privateKey as string);
     const enhancedWallet = {
       ...wallet,
       _signTypedData: async (domain: any, types: any, value: any) => wallet.signTypedData(domain, types, value),
@@ -46,16 +45,17 @@ export async function initializeClobClient(runtime: IAgentRuntime): Promise<Clob
     logger.info(`[initializeClobClient] Wallet address: ${wallet.address}`);
     logger.info(`[initializeClobClient] Chain ID: 137`);
 
+    // Don't pass WebSocket URL to constructor - it causes BigNumberish errors
     const client = new ClobClient(
-      clobApiUrl,
+      clobApiUrl as string,
       137, // Polygon chain ID
       enhancedWallet as any,
-      undefined, // No API creds for this basic client
-      clobWsUrl  // Pass WebSocket URL
+      undefined // No API creds for this basic client
+      // WebSocket URL should NOT be passed here
     );
 
     logger.info(
-      `[initializeClobClient] CLOB client initialized successfully with direct EOA wallet` + (clobWsUrl ? ' and WebSocket support.' : '.')
+      `[initializeClobClient] CLOB client initialized successfully with direct EOA wallet`
     );
     return client;
   } catch (error) {
@@ -113,7 +113,7 @@ export async function initializeClobClientWithCreds(runtime: IAgentRuntime): Pro
   logger.info(`[initializeClobClientWithCreds] Initializing CLOB client with API credentials.`);
 
   try {
-    const wallet = new ethers.Wallet(privateKey);
+    const wallet = new ethers.Wallet(privateKey as string);
     const enhancedWallet = {
       ...wallet,
       _signTypedData: async (domain: any, types: any, value: any) => wallet.signTypedData(domain, types, value),
@@ -121,20 +121,30 @@ export async function initializeClobClientWithCreds(runtime: IAgentRuntime): Pro
     };
 
     const creds: ApiKeyCreds = {
-      key: apiKey,
-      secret: apiSecret,
-      passphrase: apiPassphrase,
+      key: apiKey as string,
+      secret: apiSecret as string,
+      passphrase: apiPassphrase as string,
     };
 
     logger.info(`[initializeClobClientWithCreds] Wallet address: ${wallet.address}`);
     logger.info(`[initializeClobClientWithCreds] Chain ID: 137`);
 
+    let proxyAddress = runtime.getSetting('POLYMARKET_PROXY_ADDRESS');
+    if (proxyAddress) {
+      // Ensure proper checksum format to avoid ENS resolution attempts
+      proxyAddress = ethers.getAddress(proxyAddress as string);
+      logger.info(`[initializeClobClientWithCreds] Using Proxy Address: ${proxyAddress}`);
+    }
+
+    // ClobClient constructor:
+    // (host, chainId, signer, creds, signatureType, funderAddress, geoBlockToken, useServerTime, builderConfig)
     const client = new ClobClient(
-      clobApiUrl,
+      clobApiUrl as string,
       137, // Polygon chain ID
       enhancedWallet as any,
       creds, // API credentials for L2 authentication
-      clobWsUrl // Pass WebSocket URL
+      0, // SignatureType.EOA (default)
+      proxyAddress || undefined // funderAddress - Proxy Wallet that will be set as maker
     );
 
     logger.info(

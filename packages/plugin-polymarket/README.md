@@ -11,6 +11,9 @@ This plugin provides integration with Polymarket prediction markets through the 
 - Real-time market data access
 - TypeScript support with comprehensive error handling
 
+> 🚀 **Enhanced Fork**: This version includes additional features not in upstream!
+> See [ENHANCEMENTS.md](./ENHANCEMENTS.md) for details on Order Cancellation and Position Tracking.
+
 ## Installation
 
 This plugin is part of the ElizaOS ecosystem. To use it:
@@ -1245,13 +1248,99 @@ The plugin includes comprehensive error handling:
 
 ## Supported Markets
 
-This plugin works with all Polymarket prediction markets including:
-
 - Political events and elections
 - Cryptocurrency price predictions
 - Sports outcomes
 - Economic indicators
 - Current events and news
+
+## API Rate Limits
+
+Understanding Polymarket's API rate limits is crucial for building reliable trading applications. The API uses throttling (delays/queues requests) rather than dropping them, and allows short bursts above sustained rates.
+
+### How Rate Limiting Works
+
+- **Throttling**: Requests over the limit are delayed/queued rather than dropped
+- **Burst Allowances**: Some endpoints allow short bursts above the sustained rate
+- **Time Windows**: Limits reset based on sliding time windows (per 10 seconds, per minute)
+
+### CLOB API Rate Limits
+
+#### Trading Endpoints (Most Critical)
+
+These endpoints have the strictest limits as they affect order placement and cancellation:
+
+- **POST `/order`** - Place new order
+- **DELETE `/order`** - Cancel single order  
+- **POST `/orders`** - Batch place orders
+- **DELETE `/orders`** - Batch cancel orders
+- **POST `/cancel-all`** - Cancel all orders
+- **POST `/cancel-market-orders`** - Cancel all orders for a market
+
+**Best Practice**: Implement exponential backoff and avoid rapid-fire order placement. Use batch endpoints when possible.
+
+#### Market Data Endpoints
+
+- **GET `/book`** - Get order book for single market
+- **GET `/books`** - Get order books for multiple markets
+- **GET `/price`** - Get current price
+- **GET `/prices`** - Get multiple prices
+- **GET `/midprice`** - Get mid price
+- **GET `/midprices`** - Get multiple mid prices
+
+**Best Practice**: Cache market data when possible and use batch endpoints to reduce request count.
+
+#### Ledger Endpoints
+
+- **GET `/trades`** - Get trade history
+- **GET `/orders`** - Get order history
+- **GET `/notifications`** - Get notifications
+- **GET `/data/orders`** - Get detailed order data
+- **GET `/data/trades`** - Get detailed trade data
+
+**Best Practice**: Poll these endpoints at reasonable intervals (e.g., every 5-10 seconds) rather than continuously.
+
+### Data API Rate Limits
+
+- **GET `/trades`** - Historical trades
+- **GET `/positions`** - Current positions
+- **GET `/closed-positions`** - Closed positions
+
+### GAMMA API Rate Limits
+
+- **GET `/events`** - Get events
+- **GET `/markets`** - Get markets metadata
+
+### Rate Limit Best Practices
+
+1. **Implement Retry Logic**: Use exponential backoff when hitting rate limits
+2. **Batch Requests**: Use batch endpoints (`/books`, `/prices`) instead of multiple single requests
+3. **Cache Data**: Store frequently accessed data locally with appropriate TTL
+4. **Monitor Usage**: Track your request patterns and optimize accordingly
+5. **WebSocket for Real-time**: Consider using WebSocket connections for real-time data instead of polling
+
+### Example: Rate Limit Handling
+
+```typescript
+async function placeOrderWithRetry(client: ClobClient, orderParams: any, maxRetries = 3) {
+    for (let i = 0; i < maxRetries; i++) {
+        try {
+            return await client.createAndPostOrder(orderParams);
+        } catch (error) {
+            if (error.status === 429) { // Rate limit
+                const delay = Math.pow(2, i) * 1000; // Exponential backoff
+                await new Promise(resolve => setTimeout(resolve, delay));
+                continue;
+            }
+            throw error;
+        }
+    }
+    throw new Error('Max retries exceeded');
+}
+```
+
+For the most up-to-date rate limit information, refer to the [official Polymarket documentation](https://docs.polymarket.com/quickstart/introduction/rate-limits).
+
 
 ## License
 

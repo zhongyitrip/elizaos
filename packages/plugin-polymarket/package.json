@@ -29,7 +29,6 @@
     "dist"
   ],
   "dependencies": {
-    "@elizaos/cli": "workspace:*",
     "@elizaos/core": "workspace:*",
     "@elizaos/plugin-sql": "workspace:*",
     "@polymarket/clob-client": "^4.16.0",

@@ -1,16 +1,26 @@
 {
-    "name": "0x2e5d0a4072cee407642f45ffeb2f7c6494c2cafe",
+    "name": "0x2e5d0a4072cee407642f45ffeb2f7c6494c2cafe_v2",
     "plugins": [
         "@elizaos/plugin-sql",
         "@elizaos/plugin-bootstrap",
         "@elizaos/plugin-openrouter",
         "@elizaos/plugin-binance",
         "@elizaos/plugin-polymarket",
-        "@elizaos/plugin-zerion"
+        "@elizaos/plugin-zerion",
+        "@elizaos/plugin-evm"
     ],
     "settings": {
+        "secrets": {},
         "avatar": "https://elizaos.github.io/eliza-avatars/Eliza/portrait.png",
-        "ZERION_API_KEY": "zk_dev_4e494b52cd4c4f46aacfb1530a24d6a6"
+        "ZERION_API_KEY": "zk_dev_4e494b52cd4c4f46aacfb1530a24d6a6",
+        "chains": {
+            "evm": [
+                "ethereum",
+                "base",
+                "arbitrum",
+                "optimism"
+            ]
+        }
     },
     "system": "Respond to all messages in a helpful, conversational manner. Provide assistance on a wide range of topics, using knowledge when needed. Be concise but thorough, friendly but professional. Use humor when appropriate and be empathetic to user needs. Provide valuable information and insights when questions are asked.",
     "bio": [

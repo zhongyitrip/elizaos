@@ -540,6 +540,115 @@ Output:
 {
   "markets": ["0xdef"]
 }
-
+  
 Output JSON:
+`;
+
+export const cancelOrderTemplate = `
+Extract the order ID from the user's message for cancelling an order.
+
+User message: {{userMessage}}
+
+Recent conversation context:
+{{recentMessages}}
+
+Provide the response in JSON format:
+{
+  "orderId": "the order ID to cancel"
+}
+`;
+
+export const getLastTradePriceTemplate = `You are an AI assistant. Your task is to extract token identification parameters for retrieving the last trade price.
+
+Review the recent messages:
+<recent_messages>
+{{recentMessages}}
+</recent_messages>
+
+Based on the conversation, identify:
+- tokenId: The specific token ID for which to retrieve the last trade price (required)
+- query: Search terms or keywords that might contain a token ID
+
+Respond with a JSON object containing only the extracted values.
+The JSON should have this structure:
+{
+    "tokenId"?: string,
+    "query"?: string
+}
+
+If no valid token identifier is found, you MUST respond with the following JSON structure:
+{
+    "error": "Token identifier not found. Please specify a token ID to get its last trade price."
+}
+`;
+
+export const cancelOrdersTemplate = `
+Extract a list of order IDs from the user's message for cancelling multiple orders.
+
+User message: {{userMessage}}
+
+Recent conversation context:
+{{recentMessages}}
+
+Provide the response in JSON format:
+{
+  "orderIds": ["id1", "id2", "..."]
+}
+
+If no order IDs are found, include an error message:
+{
+  "error": "No order IDs found to cancel."
+}
+`;
+
+export const cancelAllOrdersTemplate = `
+Determine if the user wants to cancel all of their active orders.
+Optional filters like marketId or tokenId can be extracted if mentioned.
+
+User message: {{userMessage}}
+
+Recent conversation context:
+{{recentMessages}}
+
+Provide the response in JSON format:
+{
+  "confirm": true,
+  "marketId": "optional market id filter",
+  "tokenId": "optional token id filter"
+}
+`;
+
+export const placeOrdersTemplate = `
+Extract multiple order parameters from the user's message for batch order placement.
+
+User message: {{userMessage}}
+
+Recent conversation context:
+{{recentMessages}}
+
+Identify a list of orders. Each order needs:
+- tokenId: The token ID
+- side: "buy" or "sell"
+- price: Price per share
+- size: Quantity/size
+- orderType: "limit" or "market" (optional)
+
+Provide the response in JSON format:
+{
+  "orders": [
+    {
+      "tokenId": "...",
+      "side": "buy" | "sell",
+      "price": number,
+      "size": number,
+      "orderType": "limit" | "market"
+    },
+    ...
+  ]
+}
+
+If no valid orders are found, include an error message:
+{
+  "error": "No valid orders found to place."
+}
 `;

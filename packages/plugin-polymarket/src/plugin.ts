@@ -38,6 +38,12 @@ import { getTradeHistoryAction } from './actions/getTradeHistory';
 import { handleAuthenticationAction } from './actions/handleAuthentication';
 import { setupWebsocketAction } from './actions/setupWebsocket';
 import { handleRealtimeUpdatesAction } from './actions/handleRealtimeUpdates';
+import { cancelOrderAction } from './actions/cancelOrder';
+import { getPositionsAction } from './actions/getPositions';
+import { cancelOrdersAction } from './actions/cancelOrders';
+import { cancelAllOrdersAction } from './actions/cancelAllOrders';
+import { placeOrdersAction } from './actions/placeOrders';
+import { getLastTradePriceAction } from './actions/getLastTradePrice';
 
 /**
  * Define the configuration schema for the Polymarket plugin
@@ -90,9 +96,18 @@ const configSchema = z.object({
     .optional()
     .transform((val) => {
       if (!val) {
-        console.warn(
+        logger.warn(
           'Warning: POLYMARKET_PRIVATE_KEY not provided, will use WALLET_PRIVATE_KEY instead'
         );
+      }
+      return val;
+    }),
+  POLYMARKET_PROXY_ADDRESS: z
+    .string()
+    .optional()
+    .transform((val) => {
+      if (val) {
+        logger.info(`Using Polymarket Proxy Address: ${val}`);
       }
       return val;
     }),
@@ -179,6 +194,7 @@ const plugin: Plugin = {
     PRIVATE_KEY: process.env.PRIVATE_KEY,
     CLOB_API_KEY: process.env.CLOB_API_KEY,
     POLYMARKET_PRIVATE_KEY: process.env.POLYMARKET_PRIVATE_KEY,
+    POLYMARKET_PROXY_ADDRESS: process.env.POLYMARKET_PROXY_ADDRESS,
   },
   async init(config: Record<string, string>) {
     logger.info('*** Initializing Polymarket plugin ***');
@@ -226,6 +242,12 @@ const plugin: Plugin = {
     handleAuthenticationAction,
     setupWebsocketAction,
     handleRealtimeUpdatesAction,
+    cancelOrderAction,
+    getPositionsAction,
+    cancelOrdersAction,
+    cancelAllOrdersAction,
+    placeOrdersAction,
+    getLastTradePriceAction,
   ],
   providers: [polymarketProvider],
 };

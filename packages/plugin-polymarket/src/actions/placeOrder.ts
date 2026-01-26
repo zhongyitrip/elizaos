@@ -10,7 +10,7 @@ import {
   composePromptFromState,
 } from '@elizaos/core';
 import { callLLMWithTimeout } from '../utils/llmHelpers';
-import { initializeClobClient } from '../utils/clobClient';
+import { initializeClobClientWithCreds } from '../utils/clobClient';
 import { orderTemplate } from '../templates';
 import { OrderSide, OrderType } from '../types';
 import { ClobClient, Side } from '@polymarket/clob-client';
@@ -73,9 +73,9 @@ export const placeOrderAction: Action = {
     runtime: IAgentRuntime,
     message: Memory,
     state?: State,
-    options?: { [key: string]: unknown },
+    _options?: { [key: string]: unknown },
     callback?: HandlerCallback
-  ): Promise<Content> => {
+  ): Promise<any> => {
     logger.info('[placeOrderAction] Handler called!');
 
     const clobApiUrl = runtime.getSetting('CLOB_API_URL');
@@ -212,7 +212,8 @@ Please provide order details in your request. Examples:
     }
 
     try {
-      const client = await initializeClobClient(runtime);
+      const client = await initializeClobClientWithCreds(runtime);
+      const proxyAddress = runtime.getSetting('POLYMARKET_PROXY_ADDRESS');
 
       // Create order arguments matching the official ClobClient interface
       const orderArgs = {
@@ -221,6 +222,7 @@ Please provide order details in your request. Examples:
         side: side === 'BUY' ? Side.BUY : Side.SELL,
         size,
         feeRateBps: parseFloat(feeRateBps), // Convert to number
+        maker: proxyAddress || undefined,
       };
 
       logger.info(`[placeOrderAction] Creating order with args:`, orderArgs);
@@ -228,7 +230,7 @@ Please provide order details in your request. Examples:
       // Create the signed order with enhanced error handling
       let signedOrder;
       try {
-        signedOrder = await client.createOrder(orderArgs);
+        signedOrder = await client.createOrder(orderArgs as any);
         logger.info(`[placeOrderAction] Order created successfully`);
       } catch (createError) {
         logger.error(`[placeOrderAction] Error creating order:`, createError);
@@ -285,19 +287,17 @@ Please provide order details in your request. Examples:
 **Order Response:**
 • **Order ID**: ${orderResponse.orderId || 'Pending'}
 • **Status**: ${orderResponse.status || 'submitted'}
-${
-  orderResponse.orderHashes && orderResponse.orderHashes.length > 0
-    ? `• **Transaction Hash(es)**: ${orderResponse.orderHashes.join(', ')}`
-    : ''
-}
+${orderResponse.orderHashes && orderResponse.orderHashes.length > 0
+            ? `• **Transaction Hash(es)**: ${orderResponse.orderHashes.join(', ')}`
+            : ''
+          }
 
-${
-  orderResponse.status === 'matched'
-    ? '🎉 Your order was immediately matched and executed!'
-    : orderResponse.status === 'delayed'
-      ? '⏳ Your order is subject to a matching delay due to market conditions.'
-      : '📋 Your order has been placed and is waiting to be matched.'
-}`;
+${orderResponse.status === 'matched'
+            ? '🎉 Your order was immediately matched and executed!'
+            : orderResponse.status === 'delayed'
+              ? '⏳ Your order is subject to a matching delay due to market conditions.'
+              : '📋 Your order has been placed and is waiting to be matched.'
+          }`;
 
         responseData = {
           success: true,
@@ -348,8 +348,12 @@ Please check your parameters and try again. Common issues:
 
       const responseContent: Content = {
         text: responseText,
-        actions: ['POLYMARKET_PLACE_ORDER'],
-        data: responseData,
+        actions: ['PLACE_ORDER'],
+        success: true,
+        data: {
+          ...responseData,
+          ...orderResponse,
+        },
       };
 
       if (callback) {
