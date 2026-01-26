@@ -1,3 +1,7 @@
-dist/
-node_modules/
+dist
+node_modules
+.env
+.env.local
+# Keep .env.test for shared test credentials
+# .env.test/
 .env

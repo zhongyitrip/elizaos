@@ -198,3 +198,12 @@ midscene_run/log
 # Continuous Claude cache (local only)
 .claude/cache/
 /thoughts
+
+# Test Results & Logs
+test-results-*.json
+benchmark-results-*.json
+
+# Local Test Configs
+**/TEST_CREDENTIALS.md
+**/.env.test
+**/API_KEYS_GUIDE.md

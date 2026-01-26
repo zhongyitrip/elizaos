@@ -8,7 +8,7 @@
   },
   "scripts": {
     "postinstall": "bash ./scripts/init-submodules.sh",
-    "start": "turbo run start --filter=./packages/cli --log-prefix=none --no-cache",
+    "start": "turbo run start --filter=./packages/cli --log-prefix=none --no-cache -- --character characters/0x2e5d0a4072cee407642f45ffeb2f7c6494c2cafe.character.json",
     "start:debug": "cross-env NODE_NO_WARNINGS=1 LOG_LEVEL=debug elizaos start",
     "start:app": "turbo run start --filter=./packages/app",
     "dev": "bun run scripts/dev-watch.js",
@@ -93,6 +93,7 @@
   ],
   "dependencies": {
     "@elizaos/plugin-binance": "^1.0.0",
+    "@elizaos/plugin-evm": "^1.0.13",
     "@elizaos/plugin-google-genai": "^1.1.0",
     "@elizaos/plugin-ollama": "^1.2.4",
     "@elizaos/plugin-zerion": "^0.25.6-alpha.1",
@@ -101,7 +102,7 @@
     "ethers": "^6.16.0",
     "helmet": "^8.1.0",
     "js-yaml": "^4.1.1",
-    "playwright": "^1.57.0",
+    "playwright": "^1.58.0",
     "zod": "4.3.5"
   }
 }

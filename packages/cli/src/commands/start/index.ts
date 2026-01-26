@@ -19,6 +19,24 @@ import { Command, InvalidOptionArgumentError } from 'commander';
 import * as path from 'node:path';
 import { StartOptions } from './types';
 import { UserEnvironment } from '@/src/utils/user-environment';
+// @ts-ignore - Type declarations will be generated on next plugin build
+import { bootstrapPlugin } from '@elizaos/plugin-bootstrap';
+import { openrouterPlugin } from '@elizaos/plugin-openrouter';
+import { binancePlugin } from '@elizaos/plugin-binance';
+// @ts-ignore - Type declarations will be generated on next plugin build
+import { polymarketPlugin } from '@elizaos/plugin-polymarket';
+import { zerionPlugin } from '@elizaos/plugin-zerion';
+// @ts-ignore - SQL plugin exports need to be resolved in package.json
+import { plugin as sqlPlugin } from '@elizaos/plugin-sql';
+
+const STANDARD_PLUGINS = [
+  bootstrapPlugin,
+  openrouterPlugin,
+  binancePlugin,
+  polymarketPlugin,
+  zerionPlugin,
+  sqlPlugin,
+];
 
 export const start = new Command()
   .name('start')
@@ -174,11 +192,14 @@ export const start = new Command()
 
       const agentConfigs = projectAgents.length
         ? projectAgents.map((pa) => ({
-            character: pa.character,
-            plugins: Array.isArray(pa.plugins) ? pa.plugins : [],
-            init: pa.init,
-          }))
-        : characters.map((character) => ({ character }));
+          character: pa.character,
+          plugins: Array.from(new Set([...STANDARD_PLUGINS, ...(Array.isArray(pa.plugins) ? pa.plugins : [])])),
+          init: pa.init,
+        }))
+        : characters.map((character) => ({
+          character,
+          plugins: STANDARD_PLUGINS,
+        }));
 
       const server = new AgentServer();
       await server.start({

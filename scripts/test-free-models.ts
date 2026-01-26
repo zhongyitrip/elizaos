@@ -20,11 +20,10 @@ if (!OPENROUTER_API_KEY) {
 
 // All free models to test
 const FREE_MODELS = [
-    'google/gemini-2.0-flash-exp:free',
-    'qwen/qwen-2.5-72b-instruct:free',
-    'deepseek/deepseek-r1:free',
     'meta-llama/llama-3.3-70b-instruct:free',
-    'qwen/qwen-2-vl-72b-instruct:free',
+    'google/gemma-3-27b-it:free',
+    'google/gemma-3-12b-it:free',
+    'meta-llama/llama-3.1-405b-instruct:free'
 ];
 
 // Test prompts with varying complexity

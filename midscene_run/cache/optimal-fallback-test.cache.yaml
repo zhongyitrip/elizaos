@@ -1,0 +1,14 @@
+midsceneVersion: 1.2.2
+cacheId: optimal-fallback-test
+caches:
+  - type: plan
+    prompt: 请告诉我页面顶部有哪些主要的导航链接
+    yamlWorkflow: |
+      tasks:
+        - name: 请告诉我页面顶部有哪些主要的导航链接
+          flow:
+            - Print_Assert_Result: ''
+              condition: The main navigation links are located at the top of the page.
+              thought: I found the main navigation links at the top of the page.
+              result: true
+            - Finalize: ''
